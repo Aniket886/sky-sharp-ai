@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.kie-enhance]
 verify_jwt = false
+
+[functions.realesrgan-enhance]
+verify_jwt = false
