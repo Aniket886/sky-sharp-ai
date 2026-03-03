@@ -110,6 +110,7 @@ const Enhance = () => {
         model,
         scaleFactor,
         timestamp: new Date().toISOString(),
+        analysis: (res as any).analysis,
       };
 
       setResult(result);

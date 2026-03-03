@@ -71,6 +71,7 @@ const Results = () => {
     model,
     scaleFactor,
     timestamp,
+    analysis,
   } = result;
 
   const scale = parseInt(scaleFactor);
@@ -209,7 +210,7 @@ const Results = () => {
           </div>
 
           {/* AI Analysis */}
-          <AiAnalysis imageBase64={srImageUrl} />
+          <AiAnalysis imageBase64={srImageUrl} initialAnalysis={analysis} />
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8 md:mt-10">
