@@ -13,7 +13,7 @@ import {
   Activity,
   Gauge,
 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -26,49 +26,17 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-
-interface LocationState {
-  originalImage?: string;
-  scaleFactor?: string;
-  model?: string;
-  fileName?: string;
-  fileSize?: number;
-  processingTime?: string;
-  timestamp?: string;
-}
+import { useEnhance } from "@/context/EnhanceContext";
 
 const Results = () => {
-  const location = useLocation();
-  const state = (location.state as LocationState) || {};
-  const {
-    originalImage,
-    scaleFactor = "4",
-    model = "esrgan",
-    fileName = "image.png",
-    fileSize = 0,
-    processingTime = "3.2",
-    timestamp,
-  } = state;
+  const { result } = useEnhance();
 
   const [viewMode, setViewMode] = useState<"side" | "slider">("side");
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [showBicubic, setShowBicubic] = useState(false);
 
-  const metrics = useMemo(
-    () => ({
-      psnr: (25 + Math.random() * 4).toFixed(1),
-      ssim: (0.75 + Math.random() * 0.15).toFixed(2),
-    }),
-    []
-  );
-
-  const scale = parseInt(scaleFactor);
-  const fileSizeMB = (fileSize / 1024 / 1024).toFixed(1);
-  const enhancedSizeMB = ((fileSize * 1.8) / 1024 / 1024).toFixed(1);
-  const formattedTime = timestamp ? new Date(timestamp).toLocaleString() : new Date().toLocaleString();
-
   // Empty state
-  if (!originalImage) {
+  if (!result) {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
@@ -91,9 +59,27 @@ const Results = () => {
     );
   }
 
+  const {
+    srImageUrl,
+    originalImage,
+    metrics,
+    originalDimensions,
+    enhancedDimensions,
+    fileName,
+    fileSize,
+    model,
+    scaleFactor,
+    timestamp,
+  } = result;
+
+  const scale = parseInt(scaleFactor);
+  const fileSizeMB = (fileSize / 1024 / 1024).toFixed(1);
+  const enhancedSizeMB = ((fileSize * 1.8) / 1024 / 1024).toFixed(1);
+  const formattedTime = timestamp ? new Date(timestamp).toLocaleString() : new Date().toLocaleString();
+
   const handleDownload = () => {
     const link = document.createElement("a");
-    link.href = originalImage;
+    link.href = srImageUrl;
     link.download = `enhanced_${fileName}`;
     document.body.appendChild(link);
     link.click();
@@ -157,9 +143,9 @@ const Results = () => {
                   </div>
                 </div>
 
-                <div className="glass rounded-2xl p-2 md:p-3 group cursor-zoom-in" onClick={() => setLightboxSrc(originalImage)} role="button" aria-label="View enhanced image in lightbox">
+                <div className="glass rounded-2xl p-2 md:p-3 group cursor-zoom-in" onClick={() => setLightboxSrc(srImageUrl)} role="button" aria-label="View enhanced image in lightbox">
                   <div className="relative overflow-hidden rounded-xl">
-                    <img src={originalImage} alt="Enhanced satellite image" className="w-full aspect-square object-contain bg-muted/20 rounded-xl transition-transform group-hover:scale-[1.02]" style={{ filter: "contrast(1.05) saturate(1.1)" }} loading="lazy" />
+                    <img src={srImageUrl} alt="Enhanced satellite image" className="w-full aspect-square object-contain bg-muted/20 rounded-xl transition-transform group-hover:scale-[1.02]" loading="lazy" />
                     <div className="absolute top-2 left-2 px-2 md:px-2.5 py-0.5 md:py-1 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-[10px] md:text-xs font-mono text-emerald-400 flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" aria-hidden="true" />
                       Enhanced (Super-Res)
@@ -186,15 +172,15 @@ const Results = () => {
                 )}
               </div>
             ) : (
-              <ResultsSlider originalSrc={originalImage} enhancedSrc={originalImage} />
+              <ResultsSlider originalSrc={originalImage} enhancedSrc={srImageUrl} />
             )}
           </motion.div>
 
           {/* Metrics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mt-6 md:mt-8">
-            <RadialMetric value={parseFloat(metrics.psnr)} max={40} label="PSNR" displayValue={`${metrics.psnr} dB`} color="cyan" icon={<Activity className="w-4 h-4 md:w-5 md:h-5" />} delay={0.1} />
-            <RadialMetric value={parseFloat(metrics.ssim)} max={1} label="SSIM" displayValue={metrics.ssim} color="violet" icon={<Gauge className="w-4 h-4 md:w-5 md:h-5" />} delay={0.2} />
-            <RadialMetric value={parseFloat(processingTime)} max={10} label="Processing Time" displayValue={`${processingTime}s`} color="cyan" icon={<Clock className="w-4 h-4 md:w-5 md:h-5" />} delay={0.3} />
+            <RadialMetric value={metrics.psnr} max={40} label="PSNR" displayValue={`${metrics.psnr.toFixed(1)} dB`} color="cyan" icon={<Activity className="w-4 h-4 md:w-5 md:h-5" />} delay={0.1} />
+            <RadialMetric value={metrics.ssim} max={1} label="SSIM" displayValue={metrics.ssim.toFixed(2)} color="violet" icon={<Gauge className="w-4 h-4 md:w-5 md:h-5" />} delay={0.2} />
+            <RadialMetric value={metrics.processing_time} max={10} label="Processing Time" displayValue={`${metrics.processing_time.toFixed(1)}s`} color="cyan" icon={<Clock className="w-4 h-4 md:w-5 md:h-5" />} delay={0.3} />
             <RadialMetric value={scale} max={8} label="Scale Factor" displayValue={`${scaleFactor}×`} color="violet" icon={<Maximize className="w-4 h-4 md:w-5 md:h-5" />} delay={0.4} />
           </div>
 
@@ -206,8 +192,8 @@ const Results = () => {
                 <AccordionContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 pb-4">
                     <div className="space-y-2.5 md:space-y-3">
-                      <DetailRow label="Original Dimensions" value="256 × 256 px" />
-                      <DetailRow label="Enhanced Dimensions" value={`${256 * scale} × ${256 * scale} px`} />
+                      <DetailRow label="Original Dimensions" value={`${originalDimensions[0]} × ${originalDimensions[1]} px`} />
+                      <DetailRow label="Enhanced Dimensions" value={`${enhancedDimensions[0]} × ${enhancedDimensions[1]} px`} />
                       <DetailRow label="Original File Size" value={`${fileSizeMB} MB`} />
                     </div>
                     <div className="space-y-2.5 md:space-y-3">

@@ -3,6 +3,12 @@ import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Menu, X } from "lucide-react";
+import { useHealthCheck } from "@/hooks/useHealthCheck";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const links = [
   { to: "/", label: "Home" },
@@ -14,6 +20,7 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const { connected } = useHealthCheck();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -21,10 +28,23 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Close mobile menu on route change
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
+
+  const statusColor =
+    connected === null
+      ? "bg-muted-foreground"
+      : connected
+      ? "bg-emerald-400"
+      : "bg-destructive";
+
+  const statusLabel =
+    connected === null
+      ? "Checking API..."
+      : connected
+      ? "API Connected"
+      : "API Disconnected";
 
   return (
     <>
@@ -66,17 +86,32 @@ const Navbar = () => {
                 {l.label}
               </Link>
             ))}
+
+            {/* Health indicator */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="ml-3 flex items-center gap-1.5 cursor-default" aria-label={statusLabel}>
+                  <span className={cn("w-2 h-2 rounded-full transition-colors", statusColor)} />
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">
+                {statusLabel}
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Mobile toggle */}
-          <button
-            className="md:hidden text-foreground btn-press p-2 rounded-lg"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label={mobileOpen ? "Close menu" : "Open menu"}
-            aria-expanded={mobileOpen}
-          >
-            {mobileOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
+          <div className="flex md:hidden items-center gap-2">
+            <span className={cn("w-2 h-2 rounded-full transition-colors", statusColor)} aria-label={statusLabel} />
+            <button
+              className="text-foreground btn-press p-2 rounded-lg"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label={mobileOpen ? "Close menu" : "Open menu"}
+              aria-expanded={mobileOpen}
+            >
+              {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
         </div>
       </motion.nav>
 
@@ -84,7 +119,6 @@ const Navbar = () => {
       <AnimatePresence>
         {mobileOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -93,7 +127,6 @@ const Navbar = () => {
               className="fixed inset-0 z-[55] bg-background/60 backdrop-blur-sm md:hidden"
               aria-hidden="true"
             />
-            {/* Drawer */}
             <motion.div
               initial={{ x: "100%" }}
               animate={{ x: 0 }}

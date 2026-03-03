@@ -1,10 +1,11 @@
-import { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   CloudUpload,
   Loader2,
   X,
   Rocket,
+  RefreshCw,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "@/components/Navbar";
@@ -20,22 +21,24 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { enhanceImage, ApiError } from "@/services/api";
+import { useEnhance, type EnhanceResult } from "@/context/EnhanceContext";
 
 const MAX_SIZE_MB = 10;
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/jpg"];
 
 const Enhance = () => {
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const {
+    file, preview, scaleFactor, model, status, error: apiError,
+    setFile, setScaleFactor, setModel, setStatus, setError, setResult,
+  } = useEnhance();
+
   const [dragOver, setDragOver] = useState(false);
-  const [scaleFactor, setScaleFactor] = useState("4");
-  const [model, setModel] = useState("esrgan");
-  const [processing, setProcessing] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const [startTime, setStartTime] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const processing = status === "uploading" || status === "processing";
 
   const validateFile = (f: File): boolean => {
     if (!ACCEPTED_TYPES.includes(f.type)) {
@@ -52,17 +55,21 @@ const Enhance = () => {
   const handleFile = useCallback(
     (f: File) => {
       if (!validateFile(f)) return;
-      setFile(f);
       const reader = new FileReader();
-      reader.onload = (e) => setPreview(e.target?.result as string);
+      reader.onload = (e) => {
+        setFile(f, e.target?.result as string);
+        setStatus("idle");
+        setError(null);
+      };
       reader.readAsDataURL(f);
     },
-    [toast]
+    [toast, setFile, setStatus, setError]
   );
 
   const removeFile = () => {
-    setFile(null);
-    setPreview(null);
+    setFile(null, null);
+    setStatus("idle");
+    setError(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -81,47 +88,40 @@ const Enhance = () => {
     if (f) handleFile(f);
   };
 
-  const handleEnhance = () => {
+  const handleEnhance = async () => {
     if (!file || !preview) return;
-    setProcessing(true);
-    setProgress(0);
-    setStartTime(Date.now());
+
+    setStatus("uploading");
+    setError(null);
+
+    try {
+      setStatus("processing");
+      const res = await enhanceImage(file, parseInt(scaleFactor), model);
+
+      const result: EnhanceResult = {
+        srImageUrl: res.sr_image_url,
+        originalImage: preview,
+        metrics: res.metrics,
+        originalDimensions: res.original_dimensions,
+        enhancedDimensions: res.enhanced_dimensions,
+        fileName: file.name,
+        fileSize: file.size,
+        model,
+        scaleFactor,
+        timestamp: new Date().toISOString(),
+      };
+
+      setResult(result);
+      setStatus("complete");
+
+      navigate("/results");
+    } catch (err) {
+      setStatus("error");
+      const message = err instanceof ApiError ? err.message : "An unexpected error occurred.";
+      setError(message);
+      toast({ variant: "destructive", title: "Enhancement Failed", description: message });
+    }
   };
-
-  useEffect(() => {
-    if (!processing) return;
-    const duration = 3500 + Math.random() * 1500;
-    const interval = 50;
-    const steps = duration / interval;
-    let step = 0;
-
-    const timer = setInterval(() => {
-      step++;
-      const raw = step / steps;
-      const eased = 1 - Math.pow(1 - raw, 3);
-      setProgress(Math.min(Math.round(eased * 100), 100));
-
-      if (step >= steps) {
-        clearInterval(timer);
-        const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
-        setTimeout(() => {
-          navigate("/results", {
-            state: {
-              originalImage: preview,
-              scaleFactor,
-              model,
-              fileName: file?.name,
-              fileSize: file?.size,
-              processingTime,
-              timestamp: new Date().toISOString(),
-            },
-          });
-        }, 400);
-      }
-    }, interval);
-
-    return () => clearInterval(timer);
-  }, [processing, navigate, preview, scaleFactor, model, file, startTime]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -247,6 +247,29 @@ const Enhance = () => {
                   </div>
                 </div>
 
+                {/* Error state with retry */}
+                <AnimatePresence>
+                  {status === "error" && apiError && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mb-4 p-4 rounded-xl bg-destructive/10 border border-destructive/30 text-sm text-destructive flex items-center justify-between gap-3"
+                    >
+                      <span>{apiError}</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleEnhance}
+                        className="shrink-0 border-destructive/30 text-destructive hover:bg-destructive/10 btn-press"
+                        aria-label="Retry enhancement"
+                      >
+                        <RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Retry
+                      </Button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <Button
                   onClick={handleEnhance}
                   disabled={processing}
@@ -259,7 +282,7 @@ const Enhance = () => {
                   {processing ? (
                     <>
                       <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                      Processing...
+                      {status === "uploading" ? "Uploading..." : "Processing..."}
                     </>
                   ) : (
                     <>
@@ -272,12 +295,18 @@ const Enhance = () => {
                   {processing && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-4 md:mt-5">
                       <div className="flex justify-between text-xs font-mono text-muted-foreground mb-2">
-                        <span>Enhancing with {model.toUpperCase()}...</span>
-                        <span className="text-primary" aria-live="polite">{progress}%</span>
+                        <span>{status === "uploading" ? "Uploading image..." : `Enhancing with ${model.toUpperCase()}...`}</span>
+                        <span className="text-primary" aria-live="polite">Processing</span>
                       </div>
-                      <div className="h-2 md:h-2.5 rounded-full bg-muted overflow-hidden" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
-                        <motion.div className="h-full rounded-full btn-gradient" initial={{ width: 0 }} animate={{ width: `${progress}%` }} transition={{ duration: 0.1 }} />
+                      <div className="h-2 md:h-2.5 rounded-full bg-muted overflow-hidden" role="progressbar" aria-label="Processing progress">
+                        <motion.div
+                          className="h-full rounded-full btn-gradient"
+                          initial={{ width: "0%" }}
+                          animate={{ width: "100%" }}
+                          transition={{ duration: 25, ease: "linear" }}
+                        />
                       </div>
+                      <p className="text-[10px] text-muted-foreground mt-1.5">This may take up to 30 seconds depending on image size</p>
                     </motion.div>
                   )}
                 </AnimatePresence>

@@ -9,6 +9,7 @@ import PageLoader from "@/components/PageLoader";
 import ScrollToTop from "@/components/ScrollToTop";
 import usePageMeta from "@/hooks/usePageMeta";
 import useScrollRestoration from "@/hooks/useScrollRestoration";
+import { EnhanceProvider } from "@/context/EnhanceContext";
 
 const Index = lazy(() => import("./pages/Index"));
 const Enhance = lazy(() => import("./pages/Enhance"));
@@ -55,12 +56,14 @@ const AnimatedRoutes = () => {
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner position="top-right" />
-      <BrowserRouter>
-        <ScrollToTop />
-        <AnimatedRoutes />
-      </BrowserRouter>
+      <EnhanceProvider>
+        <Toaster />
+        <Sonner position="top-right" />
+        <BrowserRouter>
+          <ScrollToTop />
+          <AnimatedRoutes />
+        </BrowserRouter>
+      </EnhanceProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
