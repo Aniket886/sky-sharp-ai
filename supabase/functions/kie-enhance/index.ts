@@ -7,9 +7,8 @@ const corsHeaders = {
 };
 
 const KIE_API_BASE = "https://api.kie.ai";
-const KIE_FILE_BASE = "https://kieai.redpandaai.co";
 const POLL_INTERVAL_MS = 3000;
-const MAX_POLL_TIME_MS = 120_000; // 2 minutes
+const MAX_POLL_TIME_MS = 120_000;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -31,39 +30,11 @@ serve(async (req) => {
     }
 
     const startTime = Date.now();
-
-    // Step 1: Upload image to Kie AI via base64
-    console.log("[kie-enhance] Uploading image...");
-    const uploadRes = await fetch(`${KIE_FILE_BASE}/api/file-base64-upload`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${KIE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        base64Data: imageBase64,
-        uploadPath: "satellite-enhance",
-      }),
-    });
-
-    if (!uploadRes.ok) {
-      const errText = await uploadRes.text();
-      console.error("[kie-enhance] Upload failed:", uploadRes.status, errText);
-      throw new Error(`File upload failed (${uploadRes.status})`);
-    }
-
-    const uploadData = await uploadRes.json();
-    const fileUrl = uploadData?.data?.fileUrl;
-    if (!fileUrl) {
-      console.error("[kie-enhance] No fileUrl in upload response:", JSON.stringify(uploadData));
-      throw new Error("File upload succeeded but no URL returned");
-    }
-    console.log("[kie-enhance] Uploaded:", fileUrl);
-
-    // Step 2: Create enhancement task with Nano Banana 2
     const scale = scaleFactor || 4;
     const resolution = scale >= 4 ? "4K" : "2K";
 
+    // Pass the data URL directly as image_input
+    console.log("[kie-enhance] Creating task with Nano Banana 2...");
     const taskRes = await fetch(`${KIE_API_BASE}/api/v1/jobs/createTask`, {
       method: "POST",
       headers: {
@@ -74,7 +45,7 @@ serve(async (req) => {
         model: "nano-banana-2",
         input: {
           prompt: `Enhance and upscale this satellite image to ${scale}x resolution. Improve clarity, sharpness, and detail while preserving original colors and features. Remove noise and artifacts. Make buildings, roads, vegetation, and terrain features crisp and well-defined.`,
-          image_input: [fileUrl],
+          image_input: [imageBase64],
           aspect_ratio: "auto",
           resolution,
           output_format: "png",
@@ -91,10 +62,17 @@ serve(async (req) => {
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
-      throw new Error(`Task creation failed (${taskRes.status})`);
+      if (taskRes.status === 401) {
+        return new Response(
+          JSON.stringify({ error: "Kie AI authentication failed. Please check your API key and IP whitelist settings." }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      throw new Error(`Task creation failed (${taskRes.status}): ${errText}`);
     }
 
     const taskData = await taskRes.json();
+    console.log("[kie-enhance] Task response:", JSON.stringify(taskData));
     const taskId = taskData?.data?.taskId;
     if (!taskId) {
       console.error("[kie-enhance] No taskId:", JSON.stringify(taskData));
@@ -102,7 +80,7 @@ serve(async (req) => {
     }
     console.log("[kie-enhance] Task created:", taskId);
 
-    // Step 3: Poll for result
+    // Poll for result
     let result = null;
     const pollStart = Date.now();
 
@@ -111,13 +89,12 @@ serve(async (req) => {
 
       const statusRes = await fetch(
         `${KIE_API_BASE}/api/v1/jobs/recordInfo?taskId=${taskId}`,
-        {
-          headers: { Authorization: `Bearer ${KIE_API_KEY}` },
-        }
+        { headers: { Authorization: `Bearer ${KIE_API_KEY}` } }
       );
 
       if (!statusRes.ok) {
-        console.error("[kie-enhance] Poll error:", statusRes.status);
+        const errBody = await statusRes.text();
+        console.error("[kie-enhance] Poll error:", statusRes.status, errBody);
         continue;
       }
 
