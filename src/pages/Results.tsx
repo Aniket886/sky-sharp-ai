@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import ImageLightbox from "@/components/ImageLightbox";
 import ResultsSlider from "@/components/ResultsSlider";
 import RadialMetric from "@/components/RadialMetric";
+import AiAnalysis from "@/components/AiAnalysis";
 import {
   Accordion,
   AccordionContent,
@@ -206,6 +207,9 @@ const Results = () => {
               </AccordionItem>
             </Accordion>
           </div>
+
+          {/* AI Analysis */}
+          <AiAnalysis imageBase64={srImageUrl} />
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8 md:mt-10">
