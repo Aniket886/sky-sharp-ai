@@ -1,0 +1,106 @@
+import { useState, useRef } from "react";
+import { motion } from "framer-motion";
+
+const BeforeAfterSlider = () => {
+  const [position, setPosition] = useState(50);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMove = (clientX: number) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = Math.max(0, Math.min(clientX - rect.left, rect.width));
+    setPosition((x / rect.width) * 100);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (e.buttons !== 1) return;
+    handleMove(e.clientX);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    handleMove(e.touches[0].clientX);
+  };
+
+  return (
+    <section className="py-24">
+      <div className="container mx-auto px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            Visual <span className="gradient-text">Comparison</span>
+          </h2>
+          <p className="text-muted-foreground max-w-md mx-auto">
+            Drag the slider to see the difference AI enhancement makes
+          </p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="max-w-3xl mx-auto"
+        >
+          <div
+            ref={containerRef}
+            className="relative aspect-[16/10] rounded-2xl overflow-hidden glass cursor-ew-resize select-none"
+            onMouseMove={handleMouseMove}
+            onMouseDown={(e) => handleMove(e.clientX)}
+            onTouchMove={handleTouchMove}
+          >
+            {/* Left - Low res */}
+            <div className="absolute inset-0 bg-muted/60 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-32 h-32 md:w-48 md:h-48 bg-muted rounded-lg mx-auto mb-3 flex items-center justify-center">
+                  <span className="text-muted-foreground/50 text-4xl">🌍</span>
+                </div>
+                <span className="font-mono text-xs text-muted-foreground">
+                  Low Resolution
+                </span>
+              </div>
+            </div>
+
+            {/* Right - Enhanced */}
+            <div
+              className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/10 flex items-center justify-center"
+              style={{ clipPath: `inset(0 0 0 ${position}%)` }}
+            >
+              <div className="text-center">
+                <div className="w-32 h-32 md:w-48 md:h-48 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg mx-auto mb-3 flex items-center justify-center border border-primary/30">
+                  <span className="text-4xl">🛰️</span>
+                </div>
+                <span className="font-mono text-xs text-primary">
+                  Super-Resolved
+                </span>
+              </div>
+            </div>
+
+            {/* Divider */}
+            <div
+              className="absolute top-0 bottom-0 w-0.5 bg-primary glow-cyan z-10"
+              style={{ left: `${position}%` }}
+            >
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full glass border-2 border-primary flex items-center justify-center glow-cyan-sm">
+                <span className="text-primary text-xs">⟷</span>
+              </div>
+            </div>
+
+            {/* Labels */}
+            <div className="absolute top-4 left-4 px-3 py-1 rounded-full glass text-xs font-mono text-muted-foreground">
+              Low Resolution
+            </div>
+            <div className="absolute top-4 right-4 px-3 py-1 rounded-full glass text-xs font-mono text-primary">
+              Super-Resolved
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+};
+
+export default BeforeAfterSlider;
