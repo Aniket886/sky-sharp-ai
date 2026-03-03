@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
-import { healthCheck } from "@/services/api";
+import { healthCheck, isDemoMode } from "@/services/api";
 
 const INTERVAL_MS = 30_000;
 
 export function useHealthCheck() {
   const [connected, setConnected] = useState<boolean | null>(null);
+  const [demoMode, setDemo] = useState(isDemoMode());
 
   const check = useCallback(async () => {
+    setDemo(isDemoMode());
     const ok = await healthCheck();
     setConnected(ok);
   }, []);
@@ -17,5 +19,5 @@ export function useHealthCheck() {
     return () => clearInterval(id);
   }, [check]);
 
-  return { connected, recheck: check };
+  return { connected, demoMode, recheck: check };
 }

@@ -1,6 +1,57 @@
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const TIMEOUT_MS = 30_000;
 
+// ── Demo mode ──────────────────────────────────────────────
+let _demoMode = true; // default ON so the app works without a backend
+
+export function isDemoMode(): boolean {
+  return _demoMode;
+}
+
+export function setDemoMode(on: boolean) {
+  _demoMode = on;
+}
+
+function delay(ms: number) {
+  return new Promise((r) => setTimeout(r, ms));
+}
+
+async function mockEnhance(
+  file: File,
+  scaleFactor: number,
+  _model: string
+): Promise<EnhanceResponse> {
+  // Read file to get a data URL we can use as both original and "enhanced"
+  const dataUrl = await new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target?.result as string);
+    reader.readAsDataURL(file);
+  });
+
+  // Get real dimensions
+  const dims = await new Promise<[number, number]>((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve([img.naturalWidth, img.naturalHeight]);
+    img.onerror = () => resolve([256, 256]);
+    img.src = dataUrl;
+  });
+
+  // Simulate processing delay (2–4s)
+  await delay(2000 + Math.random() * 2000);
+
+  return {
+    sr_image_url: dataUrl, // In demo mode, reuse same image
+    metrics: {
+      psnr: +(25 + Math.random() * 5).toFixed(2),
+      ssim: +(0.78 + Math.random() * 0.15).toFixed(3),
+      processing_time: +(2 + Math.random() * 2).toFixed(1),
+    },
+    original_dimensions: dims,
+    enhanced_dimensions: [dims[0] * scaleFactor, dims[1] * scaleFactor],
+  };
+}
+
+// ── Types ──────────────────────────────────────────────────
 interface EnhanceResponse {
   sr_image_url: string;
   metrics: {
@@ -25,6 +76,7 @@ class ApiError extends Error {
   }
 }
 
+// ── Fetch wrapper ──────────────────────────────────────────
 async function request<T>(
   path: string,
   options: RequestInit = {},
@@ -76,11 +128,17 @@ function friendlyError(status: number): string {
   }
 }
 
+// ── Public API ─────────────────────────────────────────────
 export async function enhanceImage(
   file: File,
   scaleFactor: number,
   model: string
 ): Promise<EnhanceResponse> {
+  if (_demoMode) {
+    console.log("[API] Demo mode — simulating enhancement");
+    return mockEnhance(file, scaleFactor, model);
+  }
+
   const formData = new FormData();
   formData.append("image", file);
   formData.append("scale_factor", String(scaleFactor));
@@ -93,6 +151,7 @@ export async function enhanceImage(
 }
 
 export async function healthCheck(): Promise<boolean> {
+  if (_demoMode) return true;
   try {
     await request<HealthResponse>("/api/health", {}, 5000);
     return true;
