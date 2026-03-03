@@ -25,9 +25,14 @@ serve(async (req) => {
       );
     }
 
-    const base64Data = imageBase64.includes(",")
-      ? imageBase64.split(",")[1]
-      : imageBase64;
+    // Extract mime type and base64 data from data URL
+    let mimeType = "image/jpeg";
+    let base64Data = imageBase64;
+    if (imageBase64.includes(",")) {
+      const match = imageBase64.match(/^data:(image\/\w+);base64,/);
+      if (match) mimeType = match[1];
+      base64Data = imageBase64.split(",")[1];
+    }
 
     const scale = scaleFactor || 4;
     const startTime = Date.now();
@@ -53,7 +58,7 @@ Keep response under 150 words, use bullet points.`,
                 },
                 {
                   inlineData: {
-                    mimeType: "image/jpeg",
+                    mimeType,
                     data: base64Data,
                   },
                 },
