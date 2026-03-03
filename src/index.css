@@ -59,6 +59,11 @@
     @apply bg-background text-foreground font-sans;
     font-family: 'Inter', sans-serif;
   }
+
+  /* Focus ring styling — cyan outline on all focusable elements */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
 }
 
 @layer utilities {
@@ -114,5 +119,47 @@
     background-size: 200% 100%;
     animation: shimmer 2.5s ease-in-out infinite;
     pointer-events: none;
+  }
+
+  /* Button micro-interactions */
+  .btn-press {
+    @apply transition-transform duration-150;
+  }
+  .btn-press:hover {
+    transform: scale(1.02);
+  }
+  .btn-press:active {
+    transform: scale(0.97);
+  }
+
+  /* Nav link underline slide-in */
+  .nav-underline {
+    @apply relative;
+  }
+  .nav-underline::after {
+    content: '';
+    @apply absolute bottom-0 left-0 w-full h-0.5 bg-primary origin-left scale-x-0 transition-transform duration-300;
+  }
+  .nav-underline:hover::after {
+    @apply scale-x-100;
+  }
+
+  /* 3D tilt on cards */
+  .card-tilt {
+    @apply transition-transform duration-300;
+    transform-style: preserve-3d;
+    perspective: 800px;
+  }
+  .card-tilt:hover {
+    transform: perspective(800px) rotateX(2deg) rotateY(-2deg) translateY(-4px);
+  }
+
+  /* Page loader pulse ring */
+  @keyframes pulse-ring {
+    0% { transform: scale(0.8); opacity: 1; }
+    100% { transform: scale(1.6); opacity: 0; }
+  }
+  .pulse-ring {
+    animation: pulse-ring 1.5s ease-out infinite;
   }
 }

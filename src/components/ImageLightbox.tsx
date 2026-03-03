@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, memo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ZoomIn, ZoomOut, Move } from "lucide-react";
 
@@ -9,7 +9,7 @@ interface LightboxProps {
   onClose: () => void;
 }
 
-const ImageLightbox = ({ src, alt, open, onClose }: LightboxProps) => {
+const ImageLightbox = memo(({ src, alt, open, onClose }: LightboxProps) => {
   const [scale, setScale] = useState(1);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
@@ -50,6 +50,12 @@ const ImageLightbox = ({ src, alt, open, onClose }: LightboxProps) => {
     });
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Escape") handleClose();
+    if (e.key === "+" || e.key === "=") zoomIn();
+    if (e.key === "-") zoomOut();
+  };
+
   return (
     <AnimatePresence>
       {open && (
@@ -62,31 +68,26 @@ const ImageLightbox = ({ src, alt, open, onClose }: LightboxProps) => {
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
+          onKeyDown={handleKeyDown}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Image lightbox viewer"
+          tabIndex={0}
         >
-          {/* Toolbar */}
           <div
             className="absolute top-4 right-4 flex items-center gap-2 z-10"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              onClick={zoomIn}
-              className="w-9 h-9 rounded-lg glass flex items-center justify-center text-foreground hover:text-primary transition-colors"
-            >
+            <button onClick={zoomIn} className="w-9 h-9 rounded-lg glass flex items-center justify-center text-foreground hover:text-primary transition-colors btn-press" aria-label="Zoom in">
               <ZoomIn className="w-4 h-4" />
             </button>
-            <button
-              onClick={zoomOut}
-              className="w-9 h-9 rounded-lg glass flex items-center justify-center text-foreground hover:text-primary transition-colors"
-            >
+            <button onClick={zoomOut} className="w-9 h-9 rounded-lg glass flex items-center justify-center text-foreground hover:text-primary transition-colors btn-press" aria-label="Zoom out">
               <ZoomOut className="w-4 h-4" />
             </button>
-            <span className="text-xs font-mono text-muted-foreground px-2">
+            <span className="text-xs font-mono text-muted-foreground px-2" aria-live="polite">
               {Math.round(scale * 100)}%
             </span>
-            <button
-              onClick={handleClose}
-              className="w-9 h-9 rounded-lg glass flex items-center justify-center text-foreground hover:text-destructive transition-colors"
-            >
+            <button onClick={handleClose} className="w-9 h-9 rounded-lg glass flex items-center justify-center text-foreground hover:text-destructive transition-colors btn-press" aria-label="Close lightbox">
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -117,6 +118,8 @@ const ImageLightbox = ({ src, alt, open, onClose }: LightboxProps) => {
       )}
     </AnimatePresence>
   );
-};
+});
+
+ImageLightbox.displayName = "ImageLightbox";
 
 export default ImageLightbox;
