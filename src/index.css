@@ -155,6 +155,12 @@
     transform: perspective(800px) rotateX(2deg) rotateY(-2deg) translateY(-4px);
   }
 
+  /* Orbital spin */
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
   /* Page loader pulse ring */
   @keyframes pulse-ring {
     0% {
