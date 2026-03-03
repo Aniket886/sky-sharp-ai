@@ -23,6 +23,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { enhanceImage, ApiError } from "@/services/api";
 import { useEnhance, type EnhanceResult } from "@/context/EnhanceContext";
+import SampleImages from "@/components/SampleImages";
 
 const MAX_SIZE_MB = 10;
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/jpg"];
@@ -204,6 +205,9 @@ const Enhance = () => {
               )}
             </AnimatePresence>
           </motion.div>
+
+          {/* Sample images */}
+          {!preview && <SampleImages onSelect={(f) => handleFile(f)} disabled={processing} />}
 
           {/* Controls */}
           <AnimatePresence>
