@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { useEffect, useRef } from "react";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
 
@@ -11,7 +12,7 @@ interface RadialMetricProps {
   delay?: number;
 }
 
-const RadialMetric = ({
+const RadialMetric = memo(({
   value,
   max,
   label,
@@ -41,7 +42,6 @@ const RadialMetric = ({
     return controls.stop;
   }, [delay, motionValue]);
 
-  // Count-up animation for display value
   useEffect(() => {
     const numericMatch = displayValue.match(/[\d.]+/);
     if (!numericMatch || !countRef.current) return;
@@ -62,54 +62,35 @@ const RadialMetric = ({
     return controls.stop;
   }, [displayValue, delay]);
 
-  const strokeColor =
-    color === "cyan"
-      ? "hsl(187 100% 50%)"
-      : "hsl(263 75% 52%)";
-  const trackColor =
-    color === "cyan"
-      ? "hsl(187 100% 50% / 0.15)"
-      : "hsl(263 75% 52% / 0.15)";
+  const strokeColor = color === "cyan" ? "hsl(187 100% 50%)" : "hsl(263 75% 52%)";
+  const trackColor = color === "cyan" ? "hsl(187 100% 50% / 0.15)" : "hsl(263 75% 52% / 0.15)";
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5 }}
-      className="glass rounded-2xl p-5 flex flex-col items-center text-center"
+      className="glass rounded-2xl p-4 md:p-5 flex flex-col items-center text-center"
+      role="group"
+      aria-label={`${label}: ${displayValue}`}
     >
-      <div className="relative w-20 h-20 mb-3">
+      <div className="relative w-16 h-16 md:w-20 md:h-20 mb-2 md:mb-3" aria-hidden="true">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80">
-          <circle
-            cx="40"
-            cy="40"
-            r="36"
-            fill="none"
-            stroke={trackColor}
-            strokeWidth="5"
-          />
-          <motion.circle
-            cx="40"
-            cy="40"
-            r="36"
-            fill="none"
-            stroke={strokeColor}
-            strokeWidth="5"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            style={{ strokeDashoffset }}
-          />
+          <circle cx="40" cy="40" r="36" fill="none" stroke={trackColor} strokeWidth="5" />
+          <motion.circle cx="40" cy="40" r="36" fill="none" stroke={strokeColor} strokeWidth="5" strokeLinecap="round" strokeDasharray={circumference} style={{ strokeDashoffset }} />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center text-muted-foreground">
           {icon}
         </div>
       </div>
-      <span ref={countRef} className="text-lg font-bold font-mono text-foreground">
+      <span ref={countRef} className="text-base md:text-lg font-bold font-mono text-foreground">
         {displayValue}
       </span>
-      <span className="text-xs text-muted-foreground mt-0.5">{label}</span>
+      <span className="text-[10px] md:text-xs text-muted-foreground mt-0.5">{label}</span>
     </motion.div>
   );
-};
+});
+
+RadialMetric.displayName = "RadialMetric";
 
 export default RadialMetric;
