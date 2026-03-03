@@ -133,6 +133,66 @@
     transform: scale(0.97);
   }
 
+  /* Hero shimmer text */
+  .hero-shimmer-text {
+    position: relative;
+    background-clip: text;
+    -webkit-background-clip: text;
+  }
+  .hero-shimmer-text::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      120deg,
+      transparent 25%,
+      hsla(187, 100%, 80%, 0.35) 50%,
+      transparent 75%
+    );
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: hero-text-shimmer 3s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+  @keyframes hero-text-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Hero card animated conic gradient border */
+  .hero-card-border {
+    background: conic-gradient(
+      from var(--hero-border-angle, 0deg),
+      hsl(var(--cyan)) 0%,
+      hsl(var(--violet)) 33%,
+      hsl(var(--cyan) / 0.3) 66%,
+      hsl(var(--cyan)) 100%
+    );
+    animation: hero-border-spin 4s linear infinite;
+  }
+  @property --hero-border-angle {
+    syntax: "<angle>";
+    initial-value: 0deg;
+    inherits: false;
+  }
+  @keyframes hero-border-spin {
+    to { --hero-border-angle: 360deg; }
+  }
+
+  /* CTA gradient shift */
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 200% 50%; }
+  }
+
+  /* CTA pulse ring */
+  @keyframes btn-pulse {
+    0% { transform: scale(1); opacity: 0.6; }
+    100% { transform: scale(1.35); opacity: 0; }
+  }
+
   /* Nav link underline slide-in */
   .nav-underline {
     @apply relative;
