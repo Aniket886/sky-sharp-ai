@@ -143,16 +143,19 @@ export async function enhanceImage(
   scaleFactor: number,
   model: string
 ): Promise<EnhanceResponse> {
-  // Route Gemini model through edge function (works regardless of demo mode)
   if (model === "gemini") {
     console.log("[API] Using Gemini AI for enhancement");
     return geminiEnhance(file, scaleFactor);
   }
 
-  // Route Kie model through edge function (works regardless of demo mode)
   if (model === "kie") {
     console.log("[API] Using Kie AI (Nano Banana 2) for enhancement");
     return kieEnhance(file, scaleFactor);
+  }
+
+  if (model === "real-esrgan") {
+    console.log("[API] Using Real-ESRGAN via Replicate for enhancement");
+    return realEsrganEnhance(file, scaleFactor);
   }
 
   if (_demoMode) {
@@ -169,6 +172,34 @@ export async function enhanceImage(
     method: "POST",
     body: formData,
   });
+}
+
+async function realEsrganEnhance(file: File, scaleFactor: number): Promise<EnhanceResponse> {
+  const dataUrl = await new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target?.result as string);
+    reader.readAsDataURL(file);
+  });
+
+  const dims = await new Promise<[number, number]>((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve([img.naturalWidth, img.naturalHeight]);
+    img.onerror = () => resolve([256, 256]);
+    img.src = dataUrl;
+  });
+
+  const { data, error } = await supabase.functions.invoke("realesrgan-enhance", {
+    body: { imageBase64: dataUrl, scaleFactor },
+  });
+
+  if (error) throw new ApiError(error.message || "Real-ESRGAN enhancement failed", 500);
+  if (data?.error) throw new ApiError(data.error, 500);
+
+  const res = data as EnhanceResponse;
+  if (res.original_dimensions[0] === 0) res.original_dimensions = dims;
+  if (res.enhanced_dimensions[0] === 0) res.enhanced_dimensions = [dims[0] * scaleFactor, dims[1] * scaleFactor];
+
+  return res;
 }
 
 async function geminiEnhance(file: File, scaleFactor: number): Promise<EnhanceResponse> {
