@@ -96,10 +96,13 @@ const Enhance = () => {
     if (f) handleFile(f);
   };
 
+  const [startTime, setStartTime] = useState(0);
+
   const handleEnhance = () => {
     if (!file || !preview) return;
     setProcessing(true);
     setProgress(0);
+    setStartTime(Date.now());
   };
 
   // Simulated progress
@@ -119,6 +122,7 @@ const Enhance = () => {
 
       if (step >= steps) {
         clearInterval(timer);
+        const processingTime = ((Date.now() - startTime) / 1000).toFixed(1);
         setTimeout(() => {
           navigate("/results", {
             state: {
@@ -126,6 +130,9 @@ const Enhance = () => {
               scaleFactor,
               model,
               fileName: file?.name,
+              fileSize: file?.size,
+              processingTime,
+              timestamp: new Date().toISOString(),
             },
           });
         }, 400);
