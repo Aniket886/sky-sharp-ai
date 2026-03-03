@@ -54,7 +54,7 @@ export function EnhanceProvider({ children }: { children: ReactNode }) {
   const [file, setFileState] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [scaleFactor, setScaleFactor] = useState("4");
-  const [model, setModel] = useState("esrgan");
+  const [model, setModel] = useState("kie");
   const [status, setStatus] = useState<ProcessingStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [result, setResultState] = useState<EnhanceResult | null>(loadPersistedResult);
