@@ -153,6 +153,12 @@ export async function enhanceImage(
     return geminiEnhance(file, scaleFactor);
   }
 
+  // Route Kie model through edge function (works regardless of demo mode)
+  if (model === "kie") {
+    console.log("[API] Using Kie AI (Nano Banana 2) for enhancement");
+    return kieEnhance(file, scaleFactor);
+  }
+
   if (_demoMode) {
     console.log("[API] Demo mode — simulating enhancement");
     return mockEnhance(file, scaleFactor, model);
@@ -192,6 +198,34 @@ async function geminiEnhance(file: File, scaleFactor: number): Promise<EnhanceRe
 
   // Fill in dimensions if the edge function returned zeros
   const res = data as EnhanceResponse & { analysis?: string };
+  if (res.original_dimensions[0] === 0) res.original_dimensions = dims;
+  if (res.enhanced_dimensions[0] === 0) res.enhanced_dimensions = [dims[0] * scaleFactor, dims[1] * scaleFactor];
+
+  return res;
+}
+
+async function kieEnhance(file: File, scaleFactor: number): Promise<EnhanceResponse> {
+  const dataUrl = await new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target?.result as string);
+    reader.readAsDataURL(file);
+  });
+
+  const dims = await new Promise<[number, number]>((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve([img.naturalWidth, img.naturalHeight]);
+    img.onerror = () => resolve([256, 256]);
+    img.src = dataUrl;
+  });
+
+  const { data, error } = await supabase.functions.invoke("kie-enhance", {
+    body: { imageBase64: dataUrl, scaleFactor },
+  });
+
+  if (error) throw new ApiError(error.message || "Kie AI enhancement failed", 500);
+  if (data?.error) throw new ApiError(data.error, 500);
+
+  const res = data as EnhanceResponse;
   if (res.original_dimensions[0] === 0) res.original_dimensions = dims;
   if (res.enhanced_dimensions[0] === 0) res.enhanced_dimensions = [dims[0] * scaleFactor, dims[1] * scaleFactor];
 

@@ -252,6 +252,7 @@ const Enhance = () => {
                         <SelectItem value="hat">HAT</SelectItem>
                         <SelectItem value="edsr">EDSR</SelectItem>
                         <SelectItem value="gemini">✨ Gemini AI</SelectItem>
+                        <SelectItem value="kie">🚀 Kie AI</SelectItem>
                       </SelectContent>
                     </Select>
                     <p className="text-[11px] text-muted-foreground mt-1.5">
@@ -261,6 +262,7 @@ const Enhance = () => {
                       {model === "hat" && "Hybrid attention — highest PSNR scores"}
                       {model === "edsr" && "Lightweight & fast, good baseline"}
                       {model === "gemini" && "Google Gemini AI — multimodal image enhancement"}
+                      {model === "kie" && "Kie AI Nano Banana 2 — fast 4K image generation & enhancement"}
                     </p>
                   </div>
                 </div>
