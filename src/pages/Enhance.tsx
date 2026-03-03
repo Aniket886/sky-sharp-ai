@@ -8,6 +8,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import EarthLoader from "@/components/EarthLoader";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -305,20 +306,19 @@ const Enhance = () => {
 
                 <AnimatePresence>
                   {processing && (
-                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-4 md:mt-5">
-                      <div className="flex justify-between text-xs font-mono text-muted-foreground mb-2">
-                        <span>{status === "uploading" ? "Uploading image..." : `Enhancing with ${model.toUpperCase()}...`}</span>
-                        <span className="text-primary" aria-live="polite">Processing</span>
+                    <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-6 md:mt-8 flex flex-col items-center">
+                      <EarthLoader text={status === "uploading" ? "Uploading image..." : `Enhancing with ${model.toUpperCase()}...`} />
+                      <div className="w-full mt-5">
+                        <div className="h-2 md:h-2.5 rounded-full bg-muted overflow-hidden" role="progressbar" aria-label="Processing progress">
+                          <motion.div
+                            className="h-full rounded-full btn-gradient"
+                            initial={{ width: "0%" }}
+                            animate={{ width: "100%" }}
+                            transition={{ duration: 25, ease: "linear" }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-muted-foreground mt-1.5 text-center">This may take up to 30 seconds depending on image size</p>
                       </div>
-                      <div className="h-2 md:h-2.5 rounded-full bg-muted overflow-hidden" role="progressbar" aria-label="Processing progress">
-                        <motion.div
-                          className="h-full rounded-full btn-gradient"
-                          initial={{ width: "0%" }}
-                          animate={{ width: "100%" }}
-                          transition={{ duration: 25, ease: "linear" }}
-                        />
-                      </div>
-                      <p className="text-[10px] text-muted-foreground mt-1.5">This may take up to 30 seconds depending on image size</p>
                     </motion.div>
                   )}
                 </AnimatePresence>
