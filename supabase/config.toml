@@ -2,3 +2,6 @@ project_id = "reejpxxcemymyvzoakus"
 
 [functions.analyze-image]
 verify_jwt = false
+
+[functions.gemini-enhance]
+verify_jwt = false

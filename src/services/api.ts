@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 const TIMEOUT_MS = 30_000;
 
@@ -145,6 +147,12 @@ export async function enhanceImage(
   scaleFactor: number,
   model: string
 ): Promise<EnhanceResponse> {
+  // Route Gemini model through edge function (works regardless of demo mode)
+  if (model === "gemini") {
+    console.log("[API] Using Gemini AI for enhancement");
+    return geminiEnhance(file, scaleFactor);
+  }
+
   if (_demoMode) {
     console.log("[API] Demo mode — simulating enhancement");
     return mockEnhance(file, scaleFactor, model);
@@ -159,6 +167,35 @@ export async function enhanceImage(
     method: "POST",
     body: formData,
   });
+}
+
+async function geminiEnhance(file: File, scaleFactor: number): Promise<EnhanceResponse> {
+  const dataUrl = await new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve(e.target?.result as string);
+    reader.readAsDataURL(file);
+  });
+
+  const dims = await new Promise<[number, number]>((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve([img.naturalWidth, img.naturalHeight]);
+    img.onerror = () => resolve([256, 256]);
+    img.src = dataUrl;
+  });
+
+  const { data, error } = await supabase.functions.invoke("gemini-enhance", {
+    body: { imageBase64: dataUrl, scaleFactor },
+  });
+
+  if (error) throw new ApiError(error.message || "Gemini enhancement failed", 500);
+  if (data?.error) throw new ApiError(data.error, data.fallback ? 200 : 500);
+
+  // Fill in dimensions if the edge function returned zeros
+  const res = data as EnhanceResponse & { analysis?: string };
+  if (res.original_dimensions[0] === 0) res.original_dimensions = dims;
+  if (res.enhanced_dimensions[0] === 0) res.enhanced_dimensions = [dims[0] * scaleFactor, dims[1] * scaleFactor];
+
+  return res;
 }
 
 export async function healthCheck(): Promise<boolean> {
