@@ -21,6 +21,7 @@ import ImageLightbox from "@/components/ImageLightbox";
 import ResultsSlider from "@/components/ResultsSlider";
 import RadialMetric from "@/components/RadialMetric";
 import AiAnalysis from "@/components/AiAnalysis";
+import AnimatedDownloadButton from "@/components/AnimatedDownloadButton";
 import {
   Accordion,
   AccordionContent,
@@ -214,9 +215,7 @@ const Results = () => {
 
           {/* Actions */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-8 md:mt-10">
-            <Button onClick={handleDownload} size="lg" className="w-full sm:w-auto btn-gradient text-primary-foreground glow-cyan rounded-xl px-6 md:px-8 font-semibold btn-press" aria-label="Download enhanced image">
-              <Download className="w-4 h-4 mr-2" /> Download Enhanced Image
-            </Button>
+            <AnimatedDownloadButton onClick={handleDownload} />
             <Button variant="outline" asChild size="lg" className="w-full sm:w-auto rounded-xl btn-press">
               <Link to="/enhance">
                 <ArrowLeft className="w-4 h-4 mr-2" /> Enhance Another
