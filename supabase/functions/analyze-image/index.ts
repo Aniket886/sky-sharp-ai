@@ -41,10 +41,31 @@ serve(async (req) => {
       );
     }
 
-    // Strip data URL prefix if present
-    const base64Data = imageBase64.includes(",")
-      ? imageBase64.split(",")[1]
-      : imageBase64;
+    let base64Data: string;
+
+    // If input is a URL, fetch it and convert to base64
+    if (imageBase64.startsWith("http://") || imageBase64.startsWith("https://")) {
+      console.log("Input is a URL, fetching and converting to base64...");
+      const imgResponse = await fetch(imageBase64);
+      if (!imgResponse.ok) {
+        return new Response(
+          JSON.stringify({ error: "Failed to fetch image from URL" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      const arrayBuffer = await imgResponse.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = "";
+      for (let i = 0; i < bytes.length; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      base64Data = btoa(binary);
+    } else if (imageBase64.includes(",")) {
+      // Strip data URL prefix
+      base64Data = imageBase64.split(",")[1];
+    } else {
+      base64Data = imageBase64;
+    }
 
     const response = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`,
