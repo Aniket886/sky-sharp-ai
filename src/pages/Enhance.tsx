@@ -245,9 +245,20 @@ const Enhance = () => {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="esrgan">ESRGAN (Default)</SelectItem>
+                        <SelectItem value="esrgan">ESRGAN</SelectItem>
+                        <SelectItem value="real-esrgan">Real-ESRGAN</SelectItem>
+                        <SelectItem value="swinir">SwinIR</SelectItem>
+                        <SelectItem value="hat">HAT</SelectItem>
+                        <SelectItem value="edsr">EDSR</SelectItem>
                       </SelectContent>
                     </Select>
+                    <p className="text-[11px] text-muted-foreground mt-1.5">
+                      {model === "esrgan" && "Fast general-purpose super-resolution"}
+                      {model === "real-esrgan" && "Best for real-world degraded images"}
+                      {model === "swinir" && "Transformer-based, excellent detail recovery"}
+                      {model === "hat" && "Hybrid attention — highest PSNR scores"}
+                      {model === "edsr" && "Lightweight & fast, good baseline"}
+                    </p>
                   </div>
                 </div>
 
