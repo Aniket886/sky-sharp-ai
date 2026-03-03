@@ -40,14 +40,10 @@ async function mockEnhance(
 
   // Model-specific mock metrics
   const modelProfiles: Record<string, { psnrBase: number; ssimBase: number; timeBase: number }> = {
-    esrgan:        { psnrBase: 25, ssimBase: 0.78, timeBase: 2.5 },
     "real-esrgan": { psnrBase: 27, ssimBase: 0.83, timeBase: 3.0 },
-    swinir:        { psnrBase: 28, ssimBase: 0.86, timeBase: 4.5 },
-    hat:           { psnrBase: 29, ssimBase: 0.88, timeBase: 5.5 },
-    edsr:          { psnrBase: 24, ssimBase: 0.76, timeBase: 1.5 },
   };
 
-  const profile = modelProfiles[_model] || modelProfiles.esrgan;
+  const profile = modelProfiles[_model] || modelProfiles["real-esrgan"];
 
   // Simulate processing delay scaled by model complexity
   await delay(profile.timeBase * 800 + Math.random() * 1500);
