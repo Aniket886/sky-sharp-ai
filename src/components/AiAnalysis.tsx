@@ -6,10 +6,11 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface AiAnalysisProps {
   imageBase64: string;
+  initialAnalysis?: string;
 }
 
-export default function AiAnalysis({ imageBase64 }: AiAnalysisProps) {
-  const [analysis, setAnalysis] = useState<string | null>(null);
+export default function AiAnalysis({ imageBase64, initialAnalysis }: AiAnalysisProps) {
+  const [analysis, setAnalysis] = useState<string | null>(initialAnalysis || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 

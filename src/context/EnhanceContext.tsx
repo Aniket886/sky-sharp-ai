@@ -24,6 +24,7 @@ export interface EnhanceResult {
   model: string;
   scaleFactor: string;
   timestamp: string;
+  analysis?: string;
 }
 
 interface EnhanceContextValue extends EnhanceState {
