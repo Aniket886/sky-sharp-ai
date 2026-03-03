@@ -41,18 +41,24 @@ const Navbar = () => {
   const statusColor = demoMode
     ? "bg-amber-400"
     : connected === null
-    ? "bg-muted-foreground"
+    ? "bg-muted-foreground animate-pulse"
     : connected
     ? "bg-emerald-400"
-    : "bg-destructive";
+    : "bg-destructive animate-pulse";
 
   const statusLabel = demoMode
-    ? "Demo Mode"
+    ? "Demo Mode — simulating API responses"
     : connected === null
     ? "Checking API..."
     : connected
     ? "API Connected"
     : "API Disconnected";
+
+  const tooltipAction = demoMode
+    ? "disable demo mode and use real API"
+    : connected
+    ? "enable demo mode"
+    : "enable demo mode (recommended — backend unavailable)";
 
   return (
     <>
@@ -104,16 +110,21 @@ const Navbar = () => {
                     "ml-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all btn-press",
                     demoMode
                       ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                      : !connected && connected !== null
+                      ? "bg-destructive/15 text-destructive border border-destructive/30"
                       : "text-muted-foreground hover:text-foreground"
                   )}
-                  aria-label={`${statusLabel}. Click to toggle demo mode.`}
+                  aria-label={`${statusLabel}. Click to ${tooltipAction}.`}
                 >
                   <span className={cn("w-2 h-2 rounded-full transition-colors", statusColor)} />
                   {demoMode && <><FlaskConical className="w-3 h-3" /> Demo</>}
+                  {!demoMode && !connected && connected !== null && "Disconnected"}
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs">
-                {statusLabel} — Click to {demoMode ? "use real API" : "enable demo mode"}
+              <TooltipContent side="bottom" className="text-xs max-w-[220px] text-center">
+                {statusLabel}
+                <br />
+                <span className="text-muted-foreground">Click to {tooltipAction}</span>
               </TooltipContent>
             </Tooltip>
           </div>
