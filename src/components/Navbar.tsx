@@ -2,8 +2,9 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { Menu, X } from "lucide-react";
+import { Menu, X, FlaskConical } from "lucide-react";
 import { useHealthCheck } from "@/hooks/useHealthCheck";
+import { isDemoMode, setDemoMode } from "@/services/api";
 import {
   Tooltip,
   TooltipContent,
@@ -20,7 +21,7 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
-  const { connected } = useHealthCheck();
+  const { connected, demoMode, recheck } = useHealthCheck();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -32,19 +33,26 @@ const Navbar = () => {
     setMobileOpen(false);
   }, [location.pathname]);
 
-  const statusColor =
-    connected === null
-      ? "bg-muted-foreground"
-      : connected
-      ? "bg-emerald-400"
-      : "bg-destructive";
+  const toggleDemo = () => {
+    setDemoMode(!isDemoMode());
+    recheck();
+  };
 
-  const statusLabel =
-    connected === null
-      ? "Checking API..."
-      : connected
-      ? "API Connected"
-      : "API Disconnected";
+  const statusColor = demoMode
+    ? "bg-amber-400"
+    : connected === null
+    ? "bg-muted-foreground"
+    : connected
+    ? "bg-emerald-400"
+    : "bg-destructive";
+
+  const statusLabel = demoMode
+    ? "Demo Mode"
+    : connected === null
+    ? "Checking API..."
+    : connected
+    ? "API Connected"
+    : "API Disconnected";
 
   return (
     <>
@@ -87,22 +95,44 @@ const Navbar = () => {
               </Link>
             ))}
 
-            {/* Health indicator */}
+            {/* Demo toggle + health indicator */}
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="ml-3 flex items-center gap-1.5 cursor-default" aria-label={statusLabel}>
+                <button
+                  onClick={toggleDemo}
+                  className={cn(
+                    "ml-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all btn-press",
+                    demoMode
+                      ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                  aria-label={`${statusLabel}. Click to toggle demo mode.`}
+                >
                   <span className={cn("w-2 h-2 rounded-full transition-colors", statusColor)} />
-                </span>
+                  {demoMode && <><FlaskConical className="w-3 h-3" /> Demo</>}
+                </button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="text-xs">
-                {statusLabel}
+                {statusLabel} — Click to {demoMode ? "use real API" : "enable demo mode"}
               </TooltipContent>
             </Tooltip>
           </div>
 
           {/* Mobile toggle */}
           <div className="flex md:hidden items-center gap-2">
-            <span className={cn("w-2 h-2 rounded-full transition-colors", statusColor)} aria-label={statusLabel} />
+            <button
+              onClick={toggleDemo}
+              className={cn(
+                "flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-all",
+                demoMode
+                  ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
+                  : "text-muted-foreground"
+              )}
+              aria-label={`${statusLabel}. Tap to toggle.`}
+            >
+              <span className={cn("w-1.5 h-1.5 rounded-full", statusColor)} />
+              {demoMode ? "Demo" : "API"}
+            </button>
             <button
               className="text-foreground btn-press p-2 rounded-lg"
               onClick={() => setMobileOpen(!mobileOpen)}
