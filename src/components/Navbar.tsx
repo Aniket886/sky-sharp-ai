@@ -101,49 +101,46 @@ const Navbar = () => {
               </Link>
             ))}
 
-            {/* Demo toggle + health indicator */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={toggleDemo}
-                  className={cn(
-                    "ml-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all btn-press",
-                    demoMode
-                      ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                      : !connected && connected !== null
-                      ? "bg-destructive/15 text-destructive border border-destructive/30"
-                      : "text-muted-foreground hover:text-foreground"
-                  )}
-                  aria-label={`${statusLabel}. Click to ${tooltipAction}.`}
-                >
-                  <span className={cn("w-2 h-2 rounded-full transition-colors", statusColor)} />
-                  {demoMode && <><FlaskConical className="w-3 h-3" /> Demo</>}
-                  {!demoMode && !connected && connected !== null && "Disconnected"}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom" className="text-xs max-w-[220px] text-center">
-                {statusLabel}
-                <br />
-                <span className="text-muted-foreground">Click to {tooltipAction}</span>
-              </TooltipContent>
-            </Tooltip>
+            {/* Demo toggle + health indicator — only visible when demo mode is off */}
+            {!demoMode && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={toggleDemo}
+                    className={cn(
+                      "ml-3 flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all btn-press",
+                      !connected && connected !== null
+                        ? "bg-destructive/15 text-destructive border border-destructive/30"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                    aria-label={`${statusLabel}. Click to ${tooltipAction}.`}
+                  >
+                    <span className={cn("w-2 h-2 rounded-full transition-colors", statusColor)} />
+                    {!connected && connected !== null && "Disconnected"}
+                    {connected && "API"}
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs max-w-[220px] text-center">
+                  {statusLabel}
+                  <br />
+                  <span className="text-muted-foreground">Click to {tooltipAction}</span>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
 
           {/* Mobile toggle */}
           <div className="flex md:hidden items-center gap-2">
-            <button
-              onClick={toggleDemo}
-              className={cn(
-                "flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-all",
-                demoMode
-                  ? "bg-amber-500/15 text-amber-400 border border-amber-500/30"
-                  : "text-muted-foreground"
-              )}
-              aria-label={`${statusLabel}. Tap to toggle.`}
-            >
-              <span className={cn("w-1.5 h-1.5 rounded-full", statusColor)} />
-              {demoMode ? "Demo" : "API"}
-            </button>
+            {!demoMode && (
+              <button
+                onClick={toggleDemo}
+                className="flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-all text-muted-foreground"
+                aria-label={`${statusLabel}. Tap to toggle.`}
+              >
+                <span className={cn("w-1.5 h-1.5 rounded-full", statusColor)} />
+                API
+              </button>
+            )}
             <button
               className="text-foreground btn-press p-2 rounded-lg"
               onClick={() => setMobileOpen(!mobileOpen)}
