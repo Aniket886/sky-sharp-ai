@@ -125,14 +125,10 @@ serve(async (req) => {
     }
 
     if (!taskRes.ok || !taskJson || taskJson.code !== 200) {
-      console.error("[kie-enhance] Task creation failed:", taskRes.status, taskText);
-      return jsonResponse(
-        {
-          error: taskJson?.msg || `Task creation failed (${taskRes.status})`,
-          details: taskJson || taskText,
-        },
-        500
-      );
+      const statusCode = taskJson?.code || taskRes.status;
+      const msg = taskJson?.msg || `Task creation failed (${statusCode})`;
+      console.error("[kie-enhance] Task creation failed:", statusCode, taskText);
+      return jsonResponse({ error: msg, details: taskJson || taskText }, 500);
     }
 
     const taskId = taskJson?.data?.taskId;
