@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.gemini-enhance]
 verify_jwt = false
+
+[functions.kie-enhance]
+verify_jwt = false
