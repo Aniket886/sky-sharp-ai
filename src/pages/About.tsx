@@ -150,12 +150,12 @@ const benchmarks = [
 
 /* ─── Gallery ─── */
 const galleryItems = [
-  { id: 1, label: "Agricultural", img: "/samples/gallery-agricultural.jpg" },
-  { id: 2, label: "Urban", img: "/samples/gallery-urban.jpg" },
-  { id: 3, label: "Forest", img: "/samples/gallery-forest.jpg" },
-  { id: 4, label: "Coastal", img: "/samples/gallery-coastal.jpg" },
-  { id: 5, label: "Desert", img: "/samples/gallery-desert.jpg" },
-  { id: 6, label: "Mountain", img: "/samples/gallery-mountain.jpg" },
+  { id: 1, label: "Agricultural", img: "/samples/sat-agricultural.jpg" },
+  { id: 2, label: "Urban", img: "/samples/sat-urban-aerial.jpg" },
+  { id: 3, label: "Forest", img: "/samples/sat-forest.jpg" },
+  { id: 4, label: "Coastal", img: "/samples/sat-coastal.jpg" },
+  { id: 5, label: "Desert", img: "/samples/sat-desert.jpg" },
+  { id: 6, label: "Mountain", img: "/samples/sat-mountain.jpg" },
 ];
 
 /* ─── Main Page ─── */

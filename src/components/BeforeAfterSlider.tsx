@@ -69,31 +69,26 @@ const BeforeAfterSlider = memo(() => {
             onTouchMove={handleTouchMove}
             onTouchStart={(e) => handleMove(e.touches[0].clientX)}
           >
-            {/* Left - Low res */}
-            <div className="absolute inset-0 bg-muted/60 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-48 md:h-48 bg-muted rounded-lg mx-auto mb-3 flex items-center justify-center">
-                  <span className="text-muted-foreground/50 text-3xl md:text-4xl" aria-hidden="true">🌍</span>
-                </div>
-                <span className="font-mono text-xs text-muted-foreground">
-                  Low Resolution
-                </span>
-              </div>
-            </div>
+            {/* Before — blurred satellite image */}
+            <img
+              src="/samples/sat-earth-view.jpg"
+              alt="Low-resolution satellite imagery"
+              className="absolute inset-0 w-full h-full object-cover blur-[4px] scale-[1.03]"
+              draggable={false}
+            />
+            <div className="absolute inset-0 bg-background/20" />
 
-            {/* Right - Enhanced */}
+            {/* After — sharp satellite image */}
             <div
-              className="absolute inset-0 bg-gradient-to-br from-primary/5 to-secondary/10 flex items-center justify-center"
+              className="absolute inset-0 overflow-hidden"
               style={{ clipPath: `inset(0 0 0 ${position}%)` }}
             >
-              <div className="text-center">
-                <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-48 md:h-48 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg mx-auto mb-3 flex items-center justify-center border border-primary/30">
-                  <span className="text-3xl md:text-4xl" aria-hidden="true">🛰️</span>
-                </div>
-                <span className="font-mono text-xs text-primary">
-                  Super-Resolved
-                </span>
-              </div>
+              <img
+                src="/samples/sat-earth-view.jpg"
+                alt="AI-enhanced satellite imagery"
+                className="absolute inset-0 w-full h-full object-cover"
+                draggable={false}
+              />
             </div>
 
             {/* Divider */}
