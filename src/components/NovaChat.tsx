@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, X, Trash2, Send, Minus } from "lucide-react";
+import { Bot, X, Trash2, Send, Minus, Leaf, ChevronDown, ChevronUp, Clipboard, ClipboardCheck } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -10,10 +10,147 @@ import "./NovaChat.css";
 
 type Msg = { role: "user" | "assistant"; content: string; ts: number };
 
+/* ── Quick-send starter chips ── */
 const STARTERS = [
   "How does TerraLens enhance satellite imagery?",
   "What is ESRGAN and why use it for satellites?",
   "How can I analyze land use with TerraLens?",
+];
+
+/* ── Full crop analysis prompt (universal — works in ChatGPT, Gemini & Nova) ── */
+const CROP_ANALYSIS_PROMPT = `You are a senior agricultural remote sensing specialist, agronomist, and GIS expert with deep expertise in Indian farming systems, tropical and subtropical crop cultivation, and multi-scale satellite image interpretation.
+
+I am sharing a satellite or aerial image of a farm/plantation. Please analyze it thoroughly using the following structured framework:
+
+════════════════════════════════════════
+STEP 1 — GEOGRAPHIC & ENVIRONMENTAL CONTEXT
+════════════════════════════════════════
+Identify all visible environmental clues:
+• Soil color & type → infer likely Indian state/region
+  (Red/laterite → Karnataka/AP/TN | Black/dark → Maharashtra/Telangana | Sandy → Rajasthan/Gujarat | Alluvial → Indo-Gangetic Plain)
+• Topography: flat plains / terraced hillside / river floodplain / plateau / valley basin
+• Water features: irrigation canals / drip lines / check dams / flood furrows / rainfed
+• Infrastructure: road types, building styles, cold storage, solar panels, bore wells
+• Seasonal indicator: crop color (lush green = active growth | yellow = harvest stage | bare = land prep)
+
+════════════════════════════════════════
+STEP 2 — PLANTATION & FIELD STRUCTURE ANALYSIS
+════════════════════════════════════════
+• Row & spacing pattern:
+  - Regular grid → orchard/plantation crops
+  - Offset/quincunx → high-density orchard
+  - Paired rows → sugarcane/banana/drip crops
+  - Broadcast/random → pulses/millets/wheat
+  - Raised beds/ridges → vegetables/potato/cotton
+  - Contour rows → hillside tea/coffee/spices
+• Estimate inter-row spacing, intra-plant spacing, planting density (plants/acre)
+• Row orientation: N-S / E-W / diagonal / contour-following
+• Field size: small <1 acre (smallholder) | medium 1–5 acres (semi-commercial) | large >5 acres (commercial)
+
+════════════════════════════════════════
+STEP 3 — CANOPY & VEGETATION ANALYSIS
+════════════════════════════════════════
+Crown/canopy shape clues:
+• Feathery/pinnate star → Coconut, Arecanut, Date Palm
+• Broad rounded dome → Mango, Sapota, Guava, Jackfruit
+• Tall narrow column → Eucalyptus, Poplar, Arecanut
+• Dense rosette/broad leaf → Banana, Papaya, Taro
+• Low bushy mound → Coffee, Tea, Pomegranate, Grapes
+• Linear rows (no canopy) → Sugarcane, Sorghum, Maize
+• Flat continuous green → Paddy, Wheat, Groundnut, Pulses
+
+Canopy color clues:
+• Deep dark green → Coconut, Arecanut, Coffee
+• Bright lime green → Banana, Paddy, Vegetables
+• Grey-green/dusty → Mango, Guava, Neem, Teak
+• Blue-green → Eucalyptus, Sugarcane
+• Yellow-green → Maize, Sorghum, Ripening Paddy
+• Silvery/pale green → Cotton (with bolls), Mustard
+
+Shadow analysis:
+• Long distinct shadows → Tall trees (coconut/arecanut/teak)
+• Medium shadows → Mid-height crops (banana/papaya/maize)
+• No/minimal shadows → Short crops (vegetables/pulses/paddy)
+
+════════════════════════════════════════
+STEP 4 — CROP CANDIDATE EVALUATION
+════════════════════════════════════════
+Evaluate each candidate against ALL observed features:
+
+PLANTATION / TREE CROPS:
+Coconut, Arecanut, Banana, Papaya, Mango, Sapota, Guava, Pomegranate, Cashew, Jackfruit, Citrus, Tamarind/Neem/Teak
+
+SPICE & BEVERAGE CROPS:
+Coffee, Tea, Pepper, Cardamom
+
+FIELD / ANNUAL CROPS:
+Paddy/Rice, Sugarcane, Cotton, Maize, Wheat/Barley, Sorghum/Jowar, Groundnut, Soybean, Sunflower, Turmeric/Ginger, Onion/Garlic, Tomato/Chilli/Brinjal
+
+HORTICULTURAL / SPECIALTY:
+Grapes (trellised rows), Strawberry (raised plastic mulch beds), Capsicum/Cucumber (greenhouse/polyhouse visible)
+
+════════════════════════════════════════
+STEP 5 — HEALTH & STRESS ASSESSMENT
+════════════════════════════════════════
+Identify zones of concern:
+• Uniform deep green → Healthy, well-nourished
+• Patchy yellowing → Nutrient deficiency / waterlogging
+• Brown/dry patches → Drought stress / pest damage
+• Dark waterlogged zones → Drainage issues
+• Missing plant gaps → Crop failure / disease mortality
+• Uneven canopy density → Mixed age planting / irregular inputs
+• Edge browning → Boundary stress / wind damage
+
+════════════════════════════════════════
+REQUIRED OUTPUT FORMAT
+════════════════════════════════════════
+
+1. IDENTIFIED CROP (Primary)
+   → Species name (common + scientific)
+   → Confidence level: __%
+   → Key reasons for identification (3–5 bullet points)
+
+2. ALTERNATIVE POSSIBILITIES (ranked 2nd, 3rd)
+   → Crop name + reason for consideration
+   → Differentiating factor that separates from primary choice
+
+3. PLANTATION METRICS
+   → Estimated plant spacing: ___ × ___ meters
+   → Estimated plant density: ___ plants/acre
+   → Estimated crop age/stage: ___ months/years
+   → Field area estimate: ___ acres (approx.)
+
+4. GEOGRAPHIC REGION ESTIMATE
+   → Most likely Indian state(s): ___
+   → Agro-climatic zone: ___
+   → Season (Kharif / Rabi / Zaid / Perennial): ___
+
+5. HEALTH & VIGOR RATING
+   → Overall rating: Excellent / Good / Fair / Poor
+   → Stress zones identified: ___
+   → Uniformity score: ___/10
+
+6. FARMING SYSTEM
+   → Classification: Monoculture / Intercropping / Agroforestry / Mixed Orchard / Commercial / Organic
+   → Irrigation method (if visible): ___
+   → Mechanization level: Low / Medium / High
+
+7. RECOMMENDATIONS
+   → Suggested ground-truth verification method
+   → Remote sensing indices to apply (NDVI / EVI / SAVI / LAI)
+   → Additional data layers to overlay (soil map, weather, etc.)
+
+8. ANOMALIES & SPECIAL OBSERVATIONS
+   → Any unusual patterns, structures, or features noted
+
+Now please analyze the satellite/aerial image I have attached above.`;
+
+const PROMPT_TEMPLATES = [
+  {
+    label: "🌾 Crop Analysis Prompt",
+    description: "Full 5-step plantation analysis for ChatGPT / Gemini / Nova",
+    prompt: CROP_ANALYSIS_PROMPT,
+  },
 ];
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nova-chat`;
@@ -24,11 +161,13 @@ export default function NovaChat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const isMobile = useIsMobile();
 
-  // Auto-dismiss tooltip
+  /* ── Auto-dismiss tooltip ── */
   useEffect(() => {
     const seen = sessionStorage.getItem("nova-seen");
     if (!seen) {
@@ -41,17 +180,39 @@ export default function NovaChat() {
     }
   }, []);
 
-  // Scroll to bottom
+  /* ── Scroll to bottom ── */
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages, loading]);
 
-  // Focus input when opening
+  /* ── Focus input when opening ── */
   useEffect(() => {
     if (open) setTimeout(() => inputRef.current?.focus(), 300);
   }, [open]);
+
+  /* ── Load template into textarea ── */
+  const loadTemplate = (prompt: string) => {
+    setInput(prompt);
+    setShowPreview(false);
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.style.height = "auto";
+        inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 96) + "px";
+        inputRef.current.focus();
+      }
+    }, 50);
+  };
+
+  /* ── Copy template to clipboard ── */
+  const copyTemplate = async (prompt: string, idx: number) => {
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setCopiedIdx(idx);
+      setTimeout(() => setCopiedIdx(null), 2000);
+    } catch {}
+  };
 
   const sendMessage = useCallback(
     async (text: string) => {
@@ -155,7 +316,6 @@ export default function NovaChat() {
 
   const formatTime = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-  /* ---- Render ---- */
   const panelMotion = isMobile
     ? { initial: { y: "100%" }, animate: { y: 0 }, exit: { y: "100%" } }
     : {
@@ -194,7 +354,6 @@ export default function NovaChat() {
         }}
         aria-label="Toggle Nova AI chat"
       >
-        {/* pulse ring */}
         {!open && (
           <span
             className="absolute inset-0 rounded-full nova-pulse-ring"
@@ -203,7 +362,6 @@ export default function NovaChat() {
             }}
           />
         )}
-        {/* online dot */}
         {!open && (
           <span className="absolute top-0 right-0 w-3 h-3 rounded-full bg-green-400 border-2 border-background nova-online-dot" />
         )}
@@ -226,7 +384,7 @@ export default function NovaChat() {
                 ? { background: "rgba(11,15,26,0.96)", backdropFilter: "blur(20px)" }
                 : {
                     width: 380,
-                    height: 520,
+                    height: 560,
                     background: "rgba(11,15,26,0.92)",
                     backdropFilter: "blur(20px)",
                     border: "1px solid rgba(0,229,255,0.15)",
@@ -269,6 +427,7 @@ export default function NovaChat() {
             <div ref={scrollRef} className="flex-1 overflow-y-auto nova-scrollbar px-4 py-3 space-y-3">
               {messages.length === 0 && !loading ? (
                 <div className="flex flex-col items-center justify-center h-full text-center gap-3">
+                  {/* Avatar */}
                   <div
                     className="w-14 h-14 rounded-full flex items-center justify-center"
                     style={{
@@ -284,7 +443,9 @@ export default function NovaChat() {
                       Ask me about satellite imagery, AI enhancement, land analysis, or anything TerraLens.
                     </p>
                   </div>
-                  <div className="flex flex-wrap justify-center gap-2 mt-2">
+
+                  {/* Quick starters */}
+                  <div className="flex flex-wrap justify-center gap-2 mt-1">
                     {STARTERS.map((s) => (
                       <button
                         key={s}
@@ -295,6 +456,86 @@ export default function NovaChat() {
                       </button>
                     ))}
                   </div>
+
+                  {/* Divider */}
+                  <div className="w-full flex items-center gap-2 px-1 mt-1">
+                    <div className="flex-1 h-px bg-white/10" />
+                    <span className="text-[10px] text-muted-foreground uppercase tracking-widest whitespace-nowrap">
+                      Prompt Templates
+                    </span>
+                    <div className="flex-1 h-px bg-white/10" />
+                  </div>
+
+                  {/* Template cards */}
+                  {PROMPT_TEMPLATES.map((tpl, idx) => (
+                    <div
+                      key={idx}
+                      className="w-full rounded-xl border border-emerald-500/25 bg-emerald-500/5 overflow-hidden"
+                    >
+                      {/* Card header */}
+                      <div className="flex items-center gap-2 px-3 py-2.5">
+                        <div
+                          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                          style={{ background: "rgba(16,185,129,0.15)" }}
+                        >
+                          <Leaf className="w-3.5 h-3.5 text-emerald-400" />
+                        </div>
+                        <div className="flex-1 min-w-0 text-left">
+                          <p className="text-xs font-semibold text-emerald-300 leading-tight">{tpl.label}</p>
+                          <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{tpl.description}</p>
+                        </div>
+                        {/* Copy to clipboard */}
+                        <button
+                          onClick={() => copyTemplate(tpl.prompt, idx)}
+                          className="p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-emerald-300 transition-colors shrink-0"
+                          title={copiedIdx === idx ? "Copied!" : "Copy prompt to clipboard"}
+                        >
+                          {copiedIdx === idx ? (
+                            <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" />
+                          ) : (
+                            <Clipboard className="w-3.5 h-3.5" />
+                          )}
+                        </button>
+                      </div>
+
+                      {/* Preview toggle */}
+                      <button
+                        onClick={() => setShowPreview((v) => !v)}
+                        className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] text-muted-foreground hover:text-foreground border-t border-emerald-500/10 hover:bg-white/[0.03] transition-colors"
+                      >
+                        <span>{showPreview ? "Hide preview" : "Preview prompt"}</span>
+                        {showPreview ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                      </button>
+
+                      {/* Collapsible preview */}
+                      <AnimatePresence>
+                        {showPreview && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="px-3 pb-2 max-h-28 overflow-y-auto nova-scrollbar border-t border-emerald-500/10">
+                              <pre className="text-[9px] text-muted-foreground/70 whitespace-pre-wrap font-mono leading-relaxed mt-2">
+                                {tpl.prompt.slice(0, 500)}…
+                              </pre>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+
+                      {/* Load into chat CTA */}
+                      <button
+                        onClick={() => loadTemplate(tpl.prompt)}
+                        className="w-full px-3 py-2 text-xs font-semibold text-emerald-300 hover:text-white border-t border-emerald-500/10 hover:bg-emerald-500/10 transition-colors flex items-center justify-center gap-1.5"
+                      >
+                        <span>Load into chat</span>
+                        <span className="text-emerald-500">→</span>
+                      </button>
+                    </div>
+                  ))}
                 </div>
               ) : (
                 <>
@@ -358,6 +599,7 @@ export default function NovaChat() {
                       </div>
                     </div>
                   ))}
+
                   {/* Typing indicator */}
                   {loading && !messages.some((m) => m.role === "assistant" && m === messages[messages.length - 1]) && (
                     <div className="flex gap-2 items-center">
