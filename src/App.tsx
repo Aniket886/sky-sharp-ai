@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import PageLoader from "@/components/PageLoader";
+import NovaChat from "@/components/NovaChat";
 import ScrollToTop from "@/components/ScrollToTop";
 import usePageMeta from "@/hooks/usePageMeta";
 import useScrollRestoration from "@/hooks/useScrollRestoration";
@@ -62,6 +63,7 @@ const App = () => (
         <BrowserRouter>
           <ScrollToTop />
           <AnimatedRoutes />
+          <NovaChat />
         </BrowserRouter>
       </EnhanceProvider>
     </TooltipProvider>

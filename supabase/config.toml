@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.realesrgan-enhance]
 verify_jwt = false
+
+[functions.nova-chat]
+verify_jwt = false
