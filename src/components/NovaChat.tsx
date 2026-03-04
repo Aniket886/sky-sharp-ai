@@ -11,9 +11,9 @@ import "./NovaChat.css";
 type Msg = { role: "user" | "assistant"; content: string; ts: number };
 
 const STARTERS = [
-  "How does ESRGAN work?",
-  "Write a Python function",
-  "Explain quantum computing",
+  "How does TerraLens enhance satellite imagery?",
+  "What is ESRGAN and why use it for satellites?",
+  "How can I analyze land use with TerraLens?",
 ];
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/nova-chat`;
@@ -95,9 +95,7 @@ export default function NovaChat() {
           setMessages((prev) => {
             const last = prev[prev.length - 1];
             if (last?.role === "assistant") {
-              return prev.map((m, i) =>
-                i === prev.length - 1 ? { ...m, content: snapshot } : m
-              );
+              return prev.map((m, i) => (i === prev.length - 1 ? { ...m, content: snapshot } : m));
             }
             return [...prev, { role: "assistant", content: snapshot, ts: Date.now() }];
           });
@@ -143,7 +141,7 @@ export default function NovaChat() {
         setLoading(false);
       }
     },
-    [messages, loading]
+    [messages, loading],
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -155,13 +153,16 @@ export default function NovaChat() {
 
   const clearChat = () => setMessages([]);
 
-  const formatTime = (ts: number) =>
-    new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const formatTime = (ts: number) => new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   /* ---- Render ---- */
   const panelMotion = isMobile
     ? { initial: { y: "100%" }, animate: { y: 0 }, exit: { y: "100%" } }
-    : { initial: { opacity: 0, y: 20, scale: 0.95 }, animate: { opacity: 1, y: 0, scale: 1 }, exit: { opacity: 0, y: 20, scale: 0.95 } };
+    : {
+        initial: { opacity: 0, y: 20, scale: 0.95 },
+        animate: { opacity: 1, y: 0, scale: 1 },
+        exit: { opacity: 0, y: 20, scale: 0.95 },
+      };
 
   return (
     <>
@@ -181,7 +182,10 @@ export default function NovaChat() {
 
       {/* FAB */}
       <motion.button
-        onClick={() => { setOpen((v) => !v); setShowTooltip(false); }}
+        onClick={() => {
+          setOpen((v) => !v);
+          setShowTooltip(false);
+        }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
         className="fixed bottom-7 right-7 z-[9999] w-14 h-14 rounded-full flex items-center justify-center shadow-xl focus:outline-none"
@@ -194,17 +198,16 @@ export default function NovaChat() {
         {!open && (
           <span
             className="absolute inset-0 rounded-full nova-pulse-ring"
-            style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent-violet, 271 81% 56%)))" }}
+            style={{
+              background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent-violet, 271 81% 56%)))",
+            }}
           />
         )}
         {/* online dot */}
         {!open && (
           <span className="absolute top-0 right-0 w-3 h-3 rounded-full bg-green-400 border-2 border-background nova-online-dot" />
         )}
-        <motion.span
-          animate={{ rotate: open ? 90 : 0 }}
-          transition={{ duration: 0.25 }}
-        >
+        <motion.span animate={{ rotate: open ? 90 : 0 }} transition={{ duration: 0.25 }}>
           {open ? <X className="w-6 h-6 text-white" /> : <Bot className="w-6 h-6 text-white" />}
         </motion.span>
       </motion.button>
@@ -216,9 +219,7 @@ export default function NovaChat() {
             {...panelMotion}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className={
-              isMobile
-                ? "fixed inset-0 z-[9998] flex flex-col"
-                : "fixed bottom-24 right-7 z-[9998] flex flex-col"
+              isMobile ? "fixed inset-0 z-[9998] flex flex-col" : "fixed bottom-24 right-7 z-[9998] flex flex-col"
             }
             style={
               isMobile
@@ -238,18 +239,28 @@ export default function NovaChat() {
             <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-primary/10">
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
-                style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent-violet, 271 81% 56%)))" }}
+                style={{
+                  background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent-violet, 271 81% 56%)))",
+                }}
               >
                 <Bot className="w-5 h-5 text-white" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-foreground leading-tight">Nova</p>
-                <p className="text-xs text-muted-foreground">AI Assistant • General Purpose</p>
+                <p className="text-xs text-muted-foreground">TerraLens AI • Satellite Intelligence</p>
               </div>
-              <button onClick={clearChat} className="p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors" title="Clear chat">
+              <button
+                onClick={clearChat}
+                className="p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors"
+                title="Clear chat"
+              >
                 <Trash2 className="w-4 h-4" />
               </button>
-              <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors" title="Minimize">
+              <button
+                onClick={() => setOpen(false)}
+                className="p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-foreground transition-colors"
+                title="Minimize"
+              >
                 <Minus className="w-4 h-4" />
               </button>
             </div>
@@ -260,14 +271,17 @@ export default function NovaChat() {
                 <div className="flex flex-col items-center justify-center h-full text-center gap-3">
                   <div
                     className="w-14 h-14 rounded-full flex items-center justify-center"
-                    style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent-violet, 271 81% 56%)))" }}
+                    style={{
+                      background:
+                        "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent-violet, 271 81% 56%)))",
+                    }}
                   >
                     <Bot className="w-7 h-7 text-white" />
                   </div>
                   <div>
                     <p className="text-foreground font-semibold text-sm">Hey! I'm Nova ✨</p>
                     <p className="text-xs text-muted-foreground mt-1 max-w-[240px]">
-                      Ask me anything — coding, science, writing, or just curious thoughts.
+                      Ask me about satellite imagery, AI enhancement, land analysis, or anything TerraLens.
                     </p>
                   </div>
                   <div className="flex flex-wrap justify-center gap-2 mt-2">
@@ -290,7 +304,10 @@ export default function NovaChat() {
                         {m.role === "assistant" && (
                           <span
                             className="w-5 h-5 rounded-full shrink-0 mt-1 flex items-center justify-center"
-                            style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent-violet, 271 81% 56%)))" }}
+                            style={{
+                              background:
+                                "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent-violet, 271 81% 56%)))",
+                            }}
                           >
                             <Bot className="w-3 h-3 text-white" />
                           </span>
@@ -336,9 +353,7 @@ export default function NovaChat() {
                               m.content
                             )}
                           </div>
-                          <p className="text-[10px] text-muted-foreground mt-1 px-1">
-                            {formatTime(m.ts)}
-                          </p>
+                          <p className="text-[10px] text-muted-foreground mt-1 px-1">{formatTime(m.ts)}</p>
                         </div>
                       </div>
                     </div>
@@ -348,7 +363,10 @@ export default function NovaChat() {
                     <div className="flex gap-2 items-center">
                       <span
                         className="w-5 h-5 rounded-full shrink-0 flex items-center justify-center"
-                        style={{ background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent-violet, 271 81% 56%)))" }}
+                        style={{
+                          background:
+                            "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent-violet, 271 81% 56%)))",
+                        }}
                       >
                         <Bot className="w-3 h-3 text-white" />
                       </span>
@@ -371,7 +389,7 @@ export default function NovaChat() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Ask Nova anything..."
+                  placeholder="Ask Nova about TerraLens..."
                   rows={1}
                   className="flex-1 resize-none rounded-xl bg-white/5 border border-white/10 px-3 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary/40 transition-colors max-h-24"
                   style={{ minHeight: 40 }}
@@ -392,9 +410,7 @@ export default function NovaChat() {
                   <Send className="w-4 h-4 text-white" />
                 </button>
               </div>
-              {input.length > 800 && (
-                <p className="text-[10px] text-amber-400 mt-1 px-1">{input.length}/800+ chars</p>
-              )}
+              {input.length > 800 && <p className="text-[10px] text-amber-400 mt-1 px-1">{input.length}/800+ chars</p>}
               <p className="text-[10px] text-muted-foreground mt-1.5 px-1">
                 Nova may make mistakes. Verify important info.
               </p>
