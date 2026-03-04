@@ -515,19 +515,28 @@ export default function NovaChat() {
         )}
       </AnimatePresence>
 
-      {/* FAB */}
+      {/* FAB — draggable */}
       <motion.button
+        drag
+        dragMomentum={false}
+        dragElastic={0.15}
+        dragConstraints={{
+          top: -(window.innerHeight - 80),
+          left: -(window.innerWidth - 80),
+          right: 0,
+          bottom: 0,
+        }}
         onClick={() => {
           setOpen((v) => !v);
           setShowTooltip(false);
         }}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
-        className="fixed bottom-7 right-7 z-[9999] w-14 h-14 rounded-full flex items-center justify-center shadow-xl focus:outline-none"
+        className="fixed bottom-7 right-7 z-[9999] w-14 h-14 rounded-full flex items-center justify-center shadow-xl focus:outline-none touch-none cursor-grab active:cursor-grabbing"
         style={{
           background: "linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent-violet, 271 81% 56%)))",
         }}
-        aria-label="Toggle Nova AI chat"
+        aria-label="Toggle Nova AI chat — drag to reposition"
       >
         {!open && (
           <span
