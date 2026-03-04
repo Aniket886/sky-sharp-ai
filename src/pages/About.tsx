@@ -224,10 +224,10 @@ const About = () => {
               The ESRGAN pipeline from input to super-resolved output
             </motion.p>
 
-            {/* Flow diagram */}
+            {/* Flow diagram — grid on mobile/tablet, inline on desktop */}
             <motion.div
               variants={childFade}
-              className="relative grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-nowrap items-center justify-center gap-3 md:gap-0"
+              className="grid grid-cols-2 gap-3 md:flex md:flex-nowrap md:items-center md:justify-center md:gap-0"
             >
               {archNodes.map((node, i) => (
                 <div key={i} className="flex items-center">
@@ -235,7 +235,7 @@ const About = () => {
                     <TooltipTrigger asChild>
                       <motion.div
                         whileHover={{ y: -4, scale: 1.05 }}
-                        className="glass rounded-xl p-4 flex flex-col items-center gap-2 min-w-[100px] cursor-default hover:border-primary/40 transition-colors"
+                        className="glass rounded-xl p-4 flex flex-col items-center gap-2 w-full md:min-w-[100px] cursor-default hover:border-primary/40 transition-colors"
                       >
                         <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                           <node.icon className="w-5 h-5" />
