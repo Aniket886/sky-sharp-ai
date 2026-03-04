@@ -170,7 +170,7 @@ const About = () => {
         transition={{ duration: 0.6 }}
         className="container mx-auto px-4 pt-28 pb-20"
       >
-        <div className="max-w-[960px] mx-auto space-y-24">
+        <div className="max-w-[960px] mx-auto space-y-16 md:space-y-24">
           {/* ════ 1. PROJECT OVERVIEW ════ */}
           <motion.section
             initial="hidden"
@@ -190,11 +190,11 @@ const About = () => {
                   animation: "shimmer 3s linear infinite",
                 }}
               />
-              <div className="relative bg-background rounded-2xl p-8 md:p-12">
+              <div className="relative bg-background rounded-2xl p-5 sm:p-8 md:p-12">
                 <h1 className="text-3xl md:text-5xl font-extrabold mb-6">
                   About <span className="gradient-text">TerraLens</span>
                 </h1>
-                <p className="text-lg text-muted-foreground leading-relaxed max-w-3xl">
+                <p className="text-sm sm:text-base md:text-lg text-muted-foreground leading-relaxed max-w-3xl">
                   TerraLens uses Enhanced Super-Resolution Generative Adversarial
                   Networks (ESRGAN) to upscale low-resolution satellite imagery by
                   4×, recovering fine details critical for land-use analysis, urban
@@ -227,7 +227,7 @@ const About = () => {
             {/* Flow diagram */}
             <motion.div
               variants={childFade}
-              className="relative flex flex-wrap md:flex-nowrap items-center justify-center gap-3 md:gap-0"
+              className="relative grid grid-cols-2 sm:grid-cols-3 md:flex md:flex-nowrap items-center justify-center gap-3 md:gap-0"
             >
               {archNodes.map((node, i) => (
                 <div key={i} className="flex items-center">

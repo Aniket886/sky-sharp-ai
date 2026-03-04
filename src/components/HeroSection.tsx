@@ -7,7 +7,7 @@ import HeroSlider from "@/components/HeroSlider";
 
 const HeroSection = memo(() => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden px-1">
       {/* Animated background */}
       <div className="absolute inset-0" aria-hidden="true">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-background to-muted" />
