@@ -71,7 +71,7 @@ const HeroSection = memo(() => {
               size="lg"
               className="bg-primary text-primary-foreground hover:bg-primary/90 glow-cyan rounded-xl px-8 py-6 text-base font-semibold btn-press"
             >
-              <Link to="/enhance" aria-label="Try SuperSat AI image enhancement">
+              <Link to="/enhance" aria-label="Try TerraLens image enhancement">
                 Try It Now <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>

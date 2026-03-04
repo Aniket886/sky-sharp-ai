@@ -3,24 +3,24 @@ import { useLocation } from "react-router-dom";
 
 const pageTitles: Record<string, { title: string; description: string }> = {
   "/": {
-    title: "SuperSat AI — AI Satellite Image Super-Resolution",
+    title: "TerraLens — AI Satellite Image Super-Resolution",
     description:
       "Enhance satellite imagery with ESRGAN-powered 4× super-resolution. Transform low-res satellite captures into crystal-clear images using AI.",
   },
   "/enhance": {
-    title: "Enhance Image — SuperSat AI",
+    title: "Enhance Image — TerraLens",
     description:
       "Upload a satellite image and enhance it with 4× ESRGAN super-resolution. Drag and drop for instant processing.",
   },
   "/results": {
-    title: "Enhancement Results — SuperSat AI",
+    title: "Enhancement Results — TerraLens",
     description:
       "View your super-resolved satellite image with side-by-side comparison, quality metrics, and download options.",
   },
   "/about": {
-    title: "About — SuperSat AI",
+    title: "About — TerraLens",
     description:
-      "Learn about the ESRGAN architecture, training details, and performance benchmarks behind SuperSat AI.",
+      "Learn about the ESRGAN architecture, training details, and performance benchmarks behind TerraLens.",
   },
 };
 

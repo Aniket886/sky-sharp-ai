@@ -77,10 +77,10 @@ const Navbar = () => {
           <Link
             to="/"
             className="flex items-center gap-2 text-lg font-bold"
-            aria-label="SuperSat AI Home"
+            aria-label="TerraLens Home"
           >
             <span className="text-2xl" aria-hidden="true">🛰️</span>
-            <span className="gradient-text">SuperSat AI</span>
+            <span className="gradient-text">TerraLens</span>
           </Link>
 
           {/* Desktop */}
