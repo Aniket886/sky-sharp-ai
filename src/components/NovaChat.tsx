@@ -502,6 +502,8 @@ export default function NovaChat() {
 
   return (
     <>
+      {/* Full-screen drag constraint boundary */}
+      <div ref={panelDragConstraints} className="fixed inset-0 pointer-events-none z-[9997]" />
       {/* Tooltip */}
       <AnimatePresence>
         {showTooltip && !open && (
