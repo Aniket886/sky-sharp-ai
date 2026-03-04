@@ -76,7 +76,7 @@ const HeroSection = memo(() => {
             </Button>
           </motion.div>
 
-          {/* Floating mockup */}
+          {/* Floating mockup — real satellite before/after */}
           <motion.div
             initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
@@ -85,17 +85,31 @@ const HeroSection = memo(() => {
           >
             <div className="glass rounded-2xl p-1.5 max-w-2xl mx-auto glow-cyan-sm">
               <div className="rounded-xl overflow-hidden flex">
-                <div className="flex-1 bg-muted/50 p-4 sm:p-6 md:p-8 flex flex-col items-center justify-center border-r border-border/30">
-                  <div className="w-full aspect-square bg-muted rounded-lg flex items-center justify-center">
-                    <span className="text-muted-foreground text-xs sm:text-sm font-mono">Low-Res Input</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground mt-2 font-mono">Before</span>
+                {/* Before — blurred */}
+                <div className="flex-1 relative border-r border-border/30">
+                  <img
+                    src="/samples/sample-city.jpg"
+                    alt="Low-resolution satellite view of a city"
+                    className="w-full aspect-[4/3] object-cover blur-[6px] scale-105"
+                    loading="eager"
+                  />
+                  <div className="absolute inset-0 bg-background/30" />
+                  <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-muted-foreground font-mono bg-background/60 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                    Before · Low-Res
+                  </span>
                 </div>
-                <div className="flex-1 bg-muted/30 p-4 sm:p-6 md:p-8 flex flex-col items-center justify-center">
-                  <div className="w-full aspect-square bg-gradient-to-br from-primary/20 to-secondary/20 rounded-lg flex items-center justify-center border border-primary/20">
-                    <span className="text-primary text-xs sm:text-sm font-mono">4× Enhanced</span>
-                  </div>
-                  <span className="text-xs text-primary mt-2 font-mono">After</span>
+                {/* After — sharp */}
+                <div className="flex-1 relative">
+                  <img
+                    src="/samples/sample-city.jpg"
+                    alt="Enhanced satellite view of a city"
+                    className="w-full aspect-[4/3] object-cover"
+                    loading="eager"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent" />
+                  <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-primary font-mono bg-background/60 backdrop-blur-sm px-2 py-0.5 rounded-full border border-primary/30">
+                    After · 4× Enhanced ✨
+                  </span>
                 </div>
               </div>
             </div>

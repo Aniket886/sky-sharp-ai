@@ -150,12 +150,12 @@ const benchmarks = [
 
 /* ─── Gallery ─── */
 const galleryItems = [
-  { id: 1, label: "Agricultural", hue: 120 },
-  { id: 2, label: "Urban", hue: 210 },
-  { id: 3, label: "Forest", hue: 140 },
-  { id: 4, label: "Coastal", hue: 190 },
-  { id: 5, label: "Desert", hue: 35 },
-  { id: 6, label: "Mountain", hue: 260 },
+  { id: 1, label: "Agricultural", img: "/samples/gallery-agricultural.jpg" },
+  { id: 2, label: "Urban", img: "/samples/gallery-urban.jpg" },
+  { id: 3, label: "Forest", img: "/samples/gallery-forest.jpg" },
+  { id: 4, label: "Coastal", img: "/samples/gallery-coastal.jpg" },
+  { id: 5, label: "Desert", img: "/samples/gallery-desert.jpg" },
+  { id: 6, label: "Mountain", img: "/samples/gallery-mountain.jpg" },
 ];
 
 /* ─── Main Page ─── */
@@ -387,49 +387,30 @@ const About = () => {
                   whileHover={{ scale: 1.02 }}
                   className="glass rounded-2xl overflow-hidden group relative aspect-square cursor-pointer"
                 >
-                  {/* LR placeholder */}
-                  <div
-                    className="absolute inset-0 flex items-center justify-center transition-opacity duration-500 group-hover:opacity-0"
-                    style={{
-                      background: `linear-gradient(135deg, hsl(${item.hue} 30% 20%), hsl(${item.hue} 40% 12%))`,
-                    }}
-                  >
-                    <div className="text-center">
-                      <div
-                        className="w-16 h-16 rounded-lg mx-auto mb-2 opacity-40"
-                        style={{
-                          background: `repeating-conic-gradient(hsl(${item.hue} 20% 25%) 0% 25%, hsl(${item.hue} 20% 18%) 0% 50%) 0 0 / 16px 16px`,
-                        }}
-                      />
-                      <span className="text-xs font-mono text-muted-foreground">
-                        {item.label} · LR
-                      </span>
-                    </div>
-                  </div>
+                  {/* LR — blurred real image */}
+                  <img
+                    src={item.img}
+                    alt={`${item.label} satellite view — low resolution`}
+                    className="absolute inset-0 w-full h-full object-cover blur-[5px] scale-110 transition-opacity duration-500 group-hover:opacity-0"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 bg-background/40 transition-opacity duration-500 group-hover:opacity-0" />
 
-                  {/* SR reveal */}
-                  <div
-                    className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                    style={{
-                      background: `linear-gradient(135deg, hsl(${item.hue} 50% 25%), hsl(${item.hue} 60% 15%))`,
-                    }}
-                  >
-                    <div className="text-center">
-                      <div
-                        className="w-16 h-16 rounded-lg mx-auto mb-2 border border-primary/30"
-                        style={{
-                          background: `linear-gradient(135deg, hsl(${item.hue} 60% 35%), hsl(${item.hue} 70% 25%))`,
-                        }}
-                      />
-                      <span className="text-xs font-mono text-primary">
-                        {item.label} · SR ✨
-                      </span>
-                    </div>
-                  </div>
+                  {/* SR — sharp real image */}
+                  <img
+                    src={item.img}
+                    alt={`${item.label} satellite view — super-resolved`}
+                    className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+                    loading="lazy"
+                  />
 
-                  {/* Badge */}
+                  {/* Labels */}
+                  <span className="absolute top-3 right-3 text-[10px] font-mono text-muted-foreground group-hover:text-primary transition-colors bg-background/60 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                    {item.label}
+                  </span>
                   <div className="absolute bottom-3 left-3 px-2 py-0.5 rounded-full glass text-[10px] font-mono text-muted-foreground group-hover:text-primary transition-colors">
-                    Sample #{item.id}
+                    <span className="group-hover:hidden">LR · Blurred</span>
+                    <span className="hidden group-hover:inline">SR · Enhanced ✨</span>
                   </div>
                 </motion.div>
               ))}
