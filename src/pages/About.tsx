@@ -192,10 +192,10 @@ const About = () => {
               />
               <div className="relative bg-background rounded-2xl p-8 md:p-12">
                 <h1 className="text-3xl md:text-5xl font-extrabold mb-6">
-                  About <span className="gradient-text">SuperSat AI</span>
+                  About <span className="gradient-text">TerraLens</span>
                 </h1>
                 <p className="text-lg text-muted-foreground leading-relaxed max-w-3xl">
-                  SuperSat AI uses Enhanced Super-Resolution Generative Adversarial
+                  TerraLens uses Enhanced Super-Resolution Generative Adversarial
                   Networks (ESRGAN) to upscale low-resolution satellite imagery by
                   4×, recovering fine details critical for land-use analysis, urban
                   planning, and environmental monitoring.
