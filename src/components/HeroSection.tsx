@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import HeroSlider from "@/components/HeroSlider";
 
 const HeroSection = memo(() => {
   return (
@@ -76,43 +77,22 @@ const HeroSection = memo(() => {
             </Button>
           </motion.div>
 
-          {/* Floating mockup — real satellite before/after */}
+          {/* Interactive before/after slider */}
           <motion.div
             initial={{ opacity: 0, y: 60 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 0.6 }}
-            className="mt-12 md:mt-16 animate-float"
+            className="mt-12 md:mt-16"
           >
             <div className="glass rounded-2xl p-1.5 max-w-2xl mx-auto glow-cyan-sm">
-              <div className="rounded-xl overflow-hidden flex">
-                {/* Before — blurred */}
-                <div className="flex-1 relative border-r border-border/30">
-                  <img
-                    src="/samples/sample-city.jpg"
-                    alt="Low-resolution satellite view of a city"
-                    className="w-full aspect-[4/3] object-cover blur-[6px] scale-105"
-                    loading="eager"
-                  />
-                  <div className="absolute inset-0 bg-background/30" />
-                  <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-muted-foreground font-mono bg-background/60 backdrop-blur-sm px-2 py-0.5 rounded-full">
-                    Before · Low-Res
-                  </span>
-                </div>
-                {/* After — sharp */}
-                <div className="flex-1 relative">
-                  <img
-                    src="/samples/sample-city.jpg"
-                    alt="Enhanced satellite view of a city"
-                    className="w-full aspect-[4/3] object-cover"
-                    loading="eager"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-background/20 to-transparent" />
-                  <span className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-primary font-mono bg-background/60 backdrop-blur-sm px-2 py-0.5 rounded-full border border-primary/30">
-                    After · 4× Enhanced ✨
-                  </span>
-                </div>
-              </div>
+              <HeroSlider
+                beforeSrc="/samples/sat-city-night.jpg"
+                afterSrc="/samples/sat-city-night.jpg"
+              />
             </div>
+            <p className="text-[11px] text-muted-foreground/60 font-mono mt-3">
+              ← Drag to compare · Satellite imagery
+            </p>
           </motion.div>
         </div>
       </div>
