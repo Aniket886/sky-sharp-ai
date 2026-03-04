@@ -8,7 +8,7 @@ import {
   RefreshCw,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import EarthLoader from "@/components/EarthLoader";
+import GeneratingLoader from "@/components/GeneratingLoader";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { Button } from "@/components/ui/button";
@@ -307,7 +307,7 @@ const Enhance = () => {
                 <AnimatePresence>
                   {processing && (
                     <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }} className="mt-6 md:mt-8 flex flex-col items-center">
-                      <EarthLoader text={status === "uploading" ? "Uploading image..." : `Enhancing with ${model.toUpperCase()}...`} />
+                      <GeneratingLoader />
                       <div className="w-full mt-5">
                         <div className="h-2 md:h-2.5 rounded-full bg-muted overflow-hidden" role="progressbar" aria-label="Processing progress">
                           <motion.div
