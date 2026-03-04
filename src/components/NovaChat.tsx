@@ -341,6 +341,7 @@ export default function NovaChat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const panelDragConstraints = useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
   const isMobile = useIsMobile();
 
   /* ── Auto-dismiss tooltip ── */
