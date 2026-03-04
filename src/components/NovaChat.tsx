@@ -620,7 +620,7 @@ export default function NovaChat() {
               >
                 <Minus className="w-4 h-4" />
               </button>
-            </motion.div>
+            </div>
 
             {/* Messages */}
             <div ref={scrollRef} className="flex-1 overflow-y-auto nova-scrollbar px-4 py-3 space-y-3">
