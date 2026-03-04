@@ -567,6 +567,7 @@ export default function NovaChat() {
             dragMomentum={false}
             dragElastic={0}
             dragConstraints={panelDragConstraints}
+            dragControls={dragControls}
             dragListener={false}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className={
@@ -587,15 +588,11 @@ export default function NovaChat() {
             }
           >
             {/* Header — drag handle on desktop */}
-            <motion.div
-              dragControls={undefined}
+            <div
               onPointerDown={(e) => {
-                // Allow drag from header only on desktop
-                if (!isMobile) {
-                  (e.currentTarget.parentElement as any)?.__framer_drag_controls?.start(e);
-                }
+                if (!isMobile) dragControls.start(e);
               }}
-              className={`flex items-center gap-3 px-4 pt-4 pb-3 border-b border-primary/10 ${!isMobile ? "cursor-grab active:cursor-grabbing" : ""}`}
+              className={`flex items-center gap-3 px-4 pt-4 pb-3 border-b border-primary/10 ${!isMobile ? "cursor-grab active:cursor-grabbing select-none" : ""}`}
             >
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
