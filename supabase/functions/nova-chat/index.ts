@@ -23,7 +23,7 @@ serve(async (req) => {
       });
     }
 
-    const model = Deno.env.get("GROQ_MODEL") || "llama3-70b-8192";
+    const model = Deno.env.get("GROQ_MODEL") || "llama-3.3-70b-versatile";
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
