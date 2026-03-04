@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useDragControls } from "framer-motion";
 import {
   Bot,
   X,
@@ -340,6 +340,8 @@ export default function NovaChat() {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const panelDragConstraints = useRef<HTMLDivElement>(null);
+  const dragControls = useDragControls();
   const isMobile = useIsMobile();
 
   /* ── Auto-dismiss tooltip ── */
@@ -501,6 +503,8 @@ export default function NovaChat() {
 
   return (
     <>
+      {/* Full-screen drag constraint boundary */}
+      <div ref={panelDragConstraints} className="fixed inset-0 pointer-events-none z-[9997]" />
       {/* Tooltip */}
       <AnimatePresence>
         {showTooltip && !open && (
@@ -559,6 +563,12 @@ export default function NovaChat() {
         {open && (
           <motion.div
             {...panelMotion}
+            drag={!isMobile}
+            dragMomentum={false}
+            dragElastic={0}
+            dragConstraints={panelDragConstraints}
+            dragControls={dragControls}
+            dragListener={false}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className={
               isMobile ? "fixed inset-0 z-[9998] flex flex-col" : "fixed bottom-24 right-7 z-[9998] flex flex-col"
@@ -577,8 +587,13 @@ export default function NovaChat() {
                   }
             }
           >
-            {/* Header */}
-            <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-primary/10">
+            {/* Header — drag handle on desktop */}
+            <div
+              onPointerDown={(e) => {
+                if (!isMobile) dragControls.start(e);
+              }}
+              className={`flex items-center gap-3 px-4 pt-4 pb-3 border-b border-primary/10 ${!isMobile ? "cursor-grab active:cursor-grabbing select-none" : ""}`}
+            >
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                 style={{
