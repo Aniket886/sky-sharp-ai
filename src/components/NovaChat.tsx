@@ -1,6 +1,18 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bot, X, Trash2, Send, Minus, Leaf, ChevronDown, ChevronUp, Clipboard, ClipboardCheck } from "lucide-react";
+import {
+  Bot,
+  X,
+  Trash2,
+  Send,
+  Minus,
+  Leaf,
+  MapPin,
+  ChevronDown,
+  ChevronUp,
+  Clipboard,
+  ClipboardCheck,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -145,11 +157,174 @@ REQUIRED OUTPUT FORMAT
 
 Now please analyze the satellite/aerial image I have attached above.`;
 
+const ANNOTATED_MAP_PROMPT = `You are a professional GIS cartographer and agricultural remote sensing analyst. I am providing a satellite or aerial image of a farm/plantation.
+
+Your task is to generate a NEW annotated composite image in the style of a professional precision agriculture GIS analysis map — exactly like a QGIS or ArcGIS field report output.
+
+════════════════════════════════════════
+LAYER A — VEGETATION DENSITY COLOR OVERLAY
+════════════════════════════════════════
+Apply semi-transparent color masks (~45% opacity) over the original satellite image:
+
+🟩 BRIGHT GREEN fill  → Dense Healthy vegetation (NDVI high, uniform closed canopy)
+🟧 ORANGE/AMBER fill  → Moderate Density vegetation (NDVI medium, visible gaps)
+🟨 YELLOW fill        → Sparse / Stressed vegetation (NDVI low, thinning or young plants)
+
+Rules:
+• Trace the actual canopy boundaries — do NOT apply rectangular uniform fills
+• Follow the real shape of each vegetation zone as visible in the image
+• Keep original satellite detail visible beneath overlays (semi-transparent only)
+• Transition zones between density classes should be smooth/gradient where applicable
+
+════════════════════════════════════════
+LAYER B — CROP BLOCK BOUNDARY POLYGONS
+════════════════════════════════════════
+Draw clearly visible polygon outlines (2–3px thick) around each identified crop zone:
+
+CYAN / TURQUOISE solid border   → Primary crop block (main plantation area)
+                                   Label inside: "A: Main [Crop Name] Block"
+                                   Large bold italic scientific name centered:
+                                   e.g. "Musa spp. (Banana)"
+
+MAGENTA / HOT PINK solid border → Secondary crop species block
+                                   Label inside: "B: [Crop Name] Block"
+                                   Large bold italic scientific name centered:
+                                   e.g. "Cocos nucifera (Coconut)"
+
+ORANGE solid border             → Mixed / arable / transitional zone
+                                   Label: "Mixed Arable Field"
+
+WHITE solid border              → Farm buildings, residences, infrastructure
+                                   Label: "Farm Buildings / Residence"
+
+Important: Polygon borders must follow the ACTUAL irregular field boundaries visible
+in the image — NOT simple rectangles. Trace the real shape.
+
+════════════════════════════════════════
+LAYER C — STRESS ZONE MARKERS
+════════════════════════════════════════
+Draw DASHED RED/BROWN CIRCLES around every area showing:
+• Sparse or thinning canopy at field edges
+• Yellowing or browning patches
+• Missing plant gaps or low density zones
+• Transition stress between crop types
+
+Label each circle with the appropriate stress type:
+• "Sparse Density Zone"     → at corners or edges with thin planting
+• "Edge-Stress Zone"        → along field boundaries showing boundary stress
+• "Block A (Banana): Stress Zone" → within the main block sparse patches
+• "Block A (Thinne): Patch" → visibly thinner density sub-zones
+
+Style: Dashed circle outline, dark red/maroon color (#8B0000 or similar), no fill
+
+════════════════════════════════════════
+LAYER D — TEXT ANNOTATIONS (on-image labels)
+════════════════════════════════════════
+Place white bold text with dark drop-shadow directly on image:
+
+LARGE LABELS (centered in each zone, font size ~18–22pt bold italic):
+• Primary crop zone: "Musa spp. \n(Banana)" — white, bold italic, centered
+• Secondary zone: "Cocos nucifera \n(Coconut)" — white, bold italic, centered
+
+MEDIUM LABELS (font size ~11–13pt bold):
+• "A: Main Banana Block" — bottom-left of primary zone
+• "B: Coconut Block" — inside secondary zone
+• "Mixed Arable Field" — inside orange zone
+• "Farm Buildings / Residence" — inside white box(es)
+• "Access Road" — along any visible road
+• "Internal Tracks" — along internal farm tracks
+
+SMALL LABELS (font size ~9–10pt, white with shadow):
+• Each stress circle label (as described in Layer C)
+• "Block A (Banana): Edge — Stress Zone" with arrow pointing to edge
+
+════════════════════════════════════════
+LAYER E — LEGEND PANEL (Bottom-Left Corner)
+════════════════════════════════════════
+Insert a dark semi-transparent panel (black ~80% opacity, rounded corners):
+
+┌──────────────────────────────┐
+│  Legend Box                  │
+│  ─────────────────────────   │
+│  Vegetation Density          │
+│  ─────────────────────────   │
+│  🟩  Dense Healthy           │
+│  🟧  Moderate Density        │
+│  🟨  Sparse / Stressed       │
+└──────────────────────────────┘
+
+Font: white, clean sans-serif, 10–11pt
+Position: bottom-left corner, ~15px from edges
+
+════════════════════════════════════════
+LAYER F — CLASSIFICATION PANEL (Top-Right Corner)
+════════════════════════════════════════
+Insert a dark bordered info panel (black ~85% opacity background):
+
+┌──────────────────────────────────────────┐
+│  CROP CLASSIFICATION & ANALYSIS          │
+│  [cite: Confidence %]                    │
+│  ──────────────────────────────────────  │
+│  1. [cite: Musa spp. (Banana)]:          │
+│     ~95% confidence                      │
+│     (Rosette crowns, lime green, grid)   │
+│                                          │
+│  2. [cite: Cocos nucifera (Coconut)]:    │
+│     ~75% confidence                      │
+│     (Star-burst crowns, dark green)      │
+│                                          │
+│  3. [cite: Mixed Plantation]:            │
+│     ~60% confidence                      │
+│     (Variable signatures)               │
+│  ──────────────────────────────────────  │
+│  POTENTIAL ANOMALIES:                    │
+│  [cite: Stress Zone (red circles)]: ~20% │
+│  (Sparse density, edge-stress)           │
+│  ──────────────────────────────────────  │
+│  [cite: Sensor: Multispectral composite] │
+└──────────────────────────────────────────┘
+
+Font: white monospace/sans-serif, 9pt
+Width: ~260px, position: top-right, ~15px from edges
+Border: 1px dashed white or light grey
+
+════════════════════════════════════════
+LAYER G — COMPASS & SCALE BAR (Bottom-Right Corner)
+════════════════════════════════════════
+• North arrow: simple white "N" with upward arrow indicator
+• Scale bar: horizontal bar showing "0m ── 50m ── 100m"
+  (white fill bar with black outline, labeled at 0, 50, 100)
+• Position: bottom-right corner
+
+════════════════════════════════════════
+LAYER H — COORDINATE FOOTER (Bottom Center)
+════════════════════════════════════════
+Add a small white text footer bar at the very bottom:
+"Coord: [Region / District], [State] / Date: [YYYY-MM-DD] / Scale: 1:2500"
+
+════════════════════════════════════════
+FINAL IMAGE SPECIFICATIONS
+════════════════════════════════════════
+• Base layer: the original satellite image (do NOT alter or distort it)
+• Output: same resolution as input or higher
+• Style: Professional GIS / Precision Agriculture field report
+• All overlays semi-transparent (original image must remain visible underneath)
+• Color scheme: dark panels with bright overlay colors (cyan, magenta, orange, green)
+• Aesthetic: QGIS / ArcGIS multispectral crop analysis map output
+• Do NOT add a plain background — the satellite image IS the background
+
+Now generate the fully annotated GIS-style analysis map from the satellite image I have attached above.`;
+
 const PROMPT_TEMPLATES = [
   {
     label: "🌾 Crop Analysis Prompt",
     description: "Full 5-step plantation analysis for ChatGPT / Gemini / Nova",
     prompt: CROP_ANALYSIS_PROMPT,
+  },
+  {
+    label: "🗺️ Annotated Map Generator",
+    description: "Generate a GIS-style annotated satellite map image",
+    prompt: ANNOTATED_MAP_PROMPT,
   },
 ];
 
@@ -161,7 +336,7 @@ export default function NovaChat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [showTooltip, setShowTooltip] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
+  const [showPreview, setShowPreview] = useState<number | null>(null);
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -195,7 +370,7 @@ export default function NovaChat() {
   /* ── Load template into textarea ── */
   const loadTemplate = (prompt: string) => {
     setInput(prompt);
-    setShowPreview(false);
+    setShowPreview(null);
     setTimeout(() => {
       if (inputRef.current) {
         inputRef.current.style.height = "auto";
@@ -384,7 +559,7 @@ export default function NovaChat() {
                 ? { background: "rgba(11,15,26,0.96)", backdropFilter: "blur(20px)" }
                 : {
                     width: 380,
-                    height: 560,
+                    height: 600,
                     background: "rgba(11,15,26,0.92)",
                     backdropFilter: "blur(20px)",
                     border: "1px solid rgba(0,229,255,0.15)",
@@ -467,75 +642,94 @@ export default function NovaChat() {
                   </div>
 
                   {/* Template cards */}
-                  {PROMPT_TEMPLATES.map((tpl, idx) => (
-                    <div
-                      key={idx}
-                      className="w-full rounded-xl border border-emerald-500/25 bg-emerald-500/5 overflow-hidden"
-                    >
-                      {/* Card header */}
-                      <div className="flex items-center gap-2 px-3 py-2.5">
-                        <div
-                          className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                          style={{ background: "rgba(16,185,129,0.15)" }}
-                        >
-                          <Leaf className="w-3.5 h-3.5 text-emerald-400" />
+                  {PROMPT_TEMPLATES.map((tpl, idx) => {
+                    const isCropCard = idx === 0;
+                    const isOpen = showPreview === idx;
+                    const a = isCropCard
+                      ? {
+                          border: "border-emerald-500/25",
+                          bg: "bg-emerald-500/5",
+                          div: "border-emerald-500/10",
+                          iconBg: "rgba(16,185,129,0.15)",
+                          icon: <Leaf className="w-3.5 h-3.5 text-emerald-400" />,
+                          label: "text-emerald-300",
+                          btn: "text-emerald-300 hover:text-white hover:bg-emerald-500/10",
+                        }
+                      : {
+                          border: "border-sky-500/25",
+                          bg: "bg-sky-500/5",
+                          div: "border-sky-500/10",
+                          iconBg: "rgba(14,165,233,0.15)",
+                          icon: <MapPin className="w-3.5 h-3.5 text-sky-400" />,
+                          label: "text-sky-300",
+                          btn: "text-sky-300 hover:text-white hover:bg-sky-500/10",
+                        };
+                    return (
+                      <div key={idx} className={`w-full rounded-xl border ${a.border} ${a.bg} overflow-hidden`}>
+                        {/* Header */}
+                        <div className="flex items-center gap-2 px-3 py-2.5">
+                          <div
+                            className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
+                            style={{ background: a.iconBg }}
+                          >
+                            {a.icon}
+                          </div>
+                          <div className="flex-1 min-w-0 text-left">
+                            <p className={`text-xs font-semibold ${a.label} leading-tight`}>{tpl.label}</p>
+                            <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{tpl.description}</p>
+                          </div>
+                          <button
+                            onClick={() => copyTemplate(tpl.prompt, idx)}
+                            className={`p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground transition-colors shrink-0`}
+                            title={copiedIdx === idx ? "Copied!" : "Copy to clipboard"}
+                          >
+                            {copiedIdx === idx ? (
+                              <ClipboardCheck className={`w-3.5 h-3.5 ${a.label}`} />
+                            ) : (
+                              <Clipboard className="w-3.5 h-3.5" />
+                            )}
+                          </button>
                         </div>
-                        <div className="flex-1 min-w-0 text-left">
-                          <p className="text-xs font-semibold text-emerald-300 leading-tight">{tpl.label}</p>
-                          <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">{tpl.description}</p>
-                        </div>
-                        {/* Copy to clipboard */}
+
+                        {/* Preview toggle */}
                         <button
-                          onClick={() => copyTemplate(tpl.prompt, idx)}
-                          className="p-1.5 rounded-lg hover:bg-white/5 text-muted-foreground hover:text-emerald-300 transition-colors shrink-0"
-                          title={copiedIdx === idx ? "Copied!" : "Copy prompt to clipboard"}
+                          onClick={() => setShowPreview(isOpen ? null : idx)}
+                          className={`w-full flex items-center justify-between px-3 py-1.5 text-[10px] text-muted-foreground hover:text-foreground border-t ${a.div} hover:bg-white/[0.03] transition-colors`}
                         >
-                          {copiedIdx === idx ? (
-                            <ClipboardCheck className="w-3.5 h-3.5 text-emerald-400" />
-                          ) : (
-                            <Clipboard className="w-3.5 h-3.5" />
+                          <span>{isOpen ? "Hide preview" : "Preview prompt"}</span>
+                          {isOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                        </button>
+
+                        {/* Collapsible preview */}
+                        <AnimatePresence>
+                          {isOpen && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              <div className={`px-3 pb-2 max-h-28 overflow-y-auto nova-scrollbar border-t ${a.div}`}>
+                                <pre className="text-[9px] text-muted-foreground/70 whitespace-pre-wrap font-mono leading-relaxed mt-2">
+                                  {tpl.prompt.slice(0, 500)}…
+                                </pre>
+                              </div>
+                            </motion.div>
                           )}
+                        </AnimatePresence>
+
+                        {/* Load CTA */}
+                        <button
+                          onClick={() => loadTemplate(tpl.prompt)}
+                          className={`w-full px-3 py-2 text-xs font-semibold border-t ${a.div} ${a.btn} transition-colors flex items-center justify-center gap-1.5`}
+                        >
+                          <span>Load into chat</span>
+                          <span>→</span>
                         </button>
                       </div>
-
-                      {/* Preview toggle */}
-                      <button
-                        onClick={() => setShowPreview((v) => !v)}
-                        className="w-full flex items-center justify-between px-3 py-1.5 text-[10px] text-muted-foreground hover:text-foreground border-t border-emerald-500/10 hover:bg-white/[0.03] transition-colors"
-                      >
-                        <span>{showPreview ? "Hide preview" : "Preview prompt"}</span>
-                        {showPreview ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-                      </button>
-
-                      {/* Collapsible preview */}
-                      <AnimatePresence>
-                        {showPreview && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="px-3 pb-2 max-h-28 overflow-y-auto nova-scrollbar border-t border-emerald-500/10">
-                              <pre className="text-[9px] text-muted-foreground/70 whitespace-pre-wrap font-mono leading-relaxed mt-2">
-                                {tpl.prompt.slice(0, 500)}…
-                              </pre>
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-
-                      {/* Load into chat CTA */}
-                      <button
-                        onClick={() => loadTemplate(tpl.prompt)}
-                        className="w-full px-3 py-2 text-xs font-semibold text-emerald-300 hover:text-white border-t border-emerald-500/10 hover:bg-emerald-500/10 transition-colors flex items-center justify-center gap-1.5"
-                      >
-                        <span>Load into chat</span>
-                        <span className="text-emerald-500">→</span>
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <>
