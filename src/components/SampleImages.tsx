@@ -35,7 +35,7 @@ export default function SampleImages({ onSelect, disabled }: SampleImagesProps) 
         <ImageIcon className="w-3.5 h-3.5 text-muted-foreground" />
         <span className="text-xs font-medium text-muted-foreground">Or try a sample image</span>
       </div>
-      <div className="grid grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
         {SAMPLES.map((s) => (
           <motion.button
             key={s.label}
