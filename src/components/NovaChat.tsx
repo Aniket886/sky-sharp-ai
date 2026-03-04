@@ -340,6 +340,7 @@ export default function NovaChat() {
   const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const panelDragConstraints = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
   /* ── Auto-dismiss tooltip ── */
