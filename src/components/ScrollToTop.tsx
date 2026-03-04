@@ -22,7 +22,7 @@ const ScrollToTop = () => {
           exit={{ opacity: 0, scale: 0.8 }}
           onClick={scrollUp}
           aria-label="Scroll to top"
-          className="fixed bottom-6 right-6 z-50 w-11 h-11 rounded-xl glass border-primary/30 flex items-center justify-center text-primary hover:glow-cyan-sm btn-press transition-all"
+          className="fixed bottom-24 right-7 z-50 w-11 h-11 rounded-xl glass border-primary/30 flex items-center justify-center text-primary hover:glow-cyan-sm btn-press transition-all"
         >
           <ArrowUp className="w-5 h-5" />
         </motion.button>
