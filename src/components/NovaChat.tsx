@@ -562,6 +562,11 @@ export default function NovaChat() {
         {open && (
           <motion.div
             {...panelMotion}
+            drag={!isMobile}
+            dragMomentum={false}
+            dragElastic={0}
+            dragConstraints={panelDragConstraints}
+            dragListener={false}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
             className={
               isMobile ? "fixed inset-0 z-[9998] flex flex-col" : "fixed bottom-24 right-7 z-[9998] flex flex-col"
@@ -580,8 +585,17 @@ export default function NovaChat() {
                   }
             }
           >
-            {/* Header */}
-            <div className="flex items-center gap-3 px-4 pt-4 pb-3 border-b border-primary/10">
+            {/* Header — drag handle on desktop */}
+            <motion.div
+              dragControls={undefined}
+              onPointerDown={(e) => {
+                // Allow drag from header only on desktop
+                if (!isMobile) {
+                  (e.currentTarget.parentElement as any)?.__framer_drag_controls?.start(e);
+                }
+              }}
+              className={`flex items-center gap-3 px-4 pt-4 pb-3 border-b border-primary/10 ${!isMobile ? "cursor-grab active:cursor-grabbing" : ""}`}
+            >
               <div
                 className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
                 style={{
