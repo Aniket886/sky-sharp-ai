@@ -288,7 +288,7 @@ const Enhance = () => {
                             <p className="text-[11px] text-muted-foreground">
                               {isFastMode
                                 ? "2K output · ~30s · auto-fallback if slow"
-                                : "4K output · up to 8 min · highest detail"}
+                                : "4K output · ~1 min · highest detail"}
                             </p>
                           </div>
                         </div>
