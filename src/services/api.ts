@@ -120,7 +120,7 @@ async function request<T>(
       throw new ApiError("Request timed out. The server may be busy — please try again.", 408);
     }
     if (err instanceof ApiError) throw err;
-    throw new ApiError("Server unavailable. Make sure the backend is running.", 0);
+    throw new ApiError(err?.message || "Server unavailable. Make sure the backend is running.", 0);
   } finally {
     clearTimeout(timer);
   }
@@ -246,15 +246,31 @@ async function kieEnhance(file: File, scaleFactor: number, fastMode: boolean): P
     img.src = dataUrl;
   });
 
-  const { data: startData, error: startError } = await supabase.functions.invoke("kie-enhance", {
-    body: { imageBase64: dataUrl, scaleFactor, fastMode },
-  });
+  let startData: any;
+  try {
+    const { data, error: startError } = await supabase.functions.invoke("kie-enhance", {
+      body: { imageBase64: dataUrl, scaleFactor, fastMode },
+    });
 
-  if (startError) throw new ApiError(startError.message || "Kie AI enhancement failed", 500);
-  if (startData?.error) throw new ApiError(startData.error, 500);
+    if (startError) {
+      console.warn("[KIE] Start failed, falling back to Real-ESRGAN:", startError.message);
+      return realEsrganEnhance(file, scaleFactor);
+    }
+    if (data?.error) {
+      console.warn("[KIE] Start error:", data.error, "— falling back to Real-ESRGAN");
+      return realEsrganEnhance(file, scaleFactor);
+    }
+    startData = data;
+  } catch (e: any) {
+    console.warn("[KIE] Start exception, falling back to Real-ESRGAN:", e?.message);
+    return realEsrganEnhance(file, scaleFactor);
+  }
 
   const { taskId, startTime } = startData;
-  if (!taskId) throw new ApiError("No task ID returned from Kie AI", 500);
+  if (!taskId) {
+    console.warn("[KIE] No task ID, falling back to Real-ESRGAN");
+    return realEsrganEnhance(file, scaleFactor);
+  }
 
   const POLL_INTERVAL = 2000;
   const MAX_POLL_TIME = 60_000; // 1 min hard cap for both modes
@@ -265,32 +281,41 @@ async function kieEnhance(file: File, scaleFactor: number, fastMode: boolean): P
   while (Date.now() - pollStart < MAX_POLL_TIME) {
     await delay(POLL_INTERVAL);
 
-    const { data: pollData, error: pollError } = await supabase.functions.invoke("kie-enhance", {
-      body: { mode: "poll", taskId, startTime },
-    });
+    try {
+      const { data: pollData, error: pollError } = await supabase.functions.invoke("kie-enhance", {
+        body: { mode: "poll", taskId, startTime },
+      });
 
-    if (pollError) {
-      pollErrors += 1;
-      console.warn(`[KIE Poll] Error ${pollErrors}/${MAX_POLL_ERRORS}:`, pollError.message);
-      if (pollErrors >= MAX_POLL_ERRORS) {
-        console.warn("[KIE Poll] Too many errors, falling back to Real-ESRGAN");
+      if (pollError) {
+        pollErrors += 1;
+        console.warn(`[KIE Poll] Error ${pollErrors}/${MAX_POLL_ERRORS}:`, pollError.message);
+        if (pollErrors >= MAX_POLL_ERRORS) {
+          console.warn("[KIE Poll] Too many errors, falling back to Real-ESRGAN");
+          return realEsrganEnhance(file, scaleFactor);
+        }
+        continue;
+      }
+
+      pollErrors = 0;
+
+      if (pollData?.status === "complete") {
+        const res = pollData as EnhanceResponse;
+        if (res.original_dimensions[0] === 0) res.original_dimensions = dims;
+        if (res.enhanced_dimensions[0] === 0) res.enhanced_dimensions = [dims[0] * scaleFactor, dims[1] * scaleFactor];
+        return res;
+      }
+
+      if (pollData?.status === "failed") {
+        console.warn("[KIE Poll] Provider task failed, falling back to Real-ESRGAN");
         return realEsrganEnhance(file, scaleFactor);
       }
-      continue;
-    }
-
-    pollErrors = 0;
-
-    if (pollData?.status === "complete") {
-      const res = pollData as EnhanceResponse;
-      if (res.original_dimensions[0] === 0) res.original_dimensions = dims;
-      if (res.enhanced_dimensions[0] === 0) res.enhanced_dimensions = [dims[0] * scaleFactor, dims[1] * scaleFactor];
-      return res;
-    }
-
-    if (pollData?.status === "failed") {
-      console.warn("[KIE Poll] Provider task failed, falling back to Real-ESRGAN");
-      return realEsrganEnhance(file, scaleFactor);
+    } catch (e: any) {
+      pollErrors += 1;
+      console.warn(`[KIE Poll] Exception ${pollErrors}/${MAX_POLL_ERRORS}:`, e?.message);
+      if (pollErrors >= MAX_POLL_ERRORS) {
+        console.warn("[KIE Poll] Too many exceptions, falling back to Real-ESRGAN");
+        return realEsrganEnhance(file, scaleFactor);
+      }
     }
   }
 
