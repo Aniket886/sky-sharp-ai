@@ -72,7 +72,13 @@ export function EnhanceProvider({ children }: { children: ReactNode }) {
   const setResult = useCallback((r: EnhanceResult | null) => {
     setResultState(r);
     if (r) {
-      sessionStorage.setItem(SESSION_KEY, JSON.stringify(r));
+      // Store only metadata, not image data (which can exceed sessionStorage quota)
+      try {
+        const { srImageUrl, originalImage, ...metadata } = r;
+        sessionStorage.setItem(SESSION_KEY, JSON.stringify(metadata));
+      } catch {
+        // Quota exceeded — silently skip persistence
+      }
     } else {
       sessionStorage.removeItem(SESSION_KEY);
     }
