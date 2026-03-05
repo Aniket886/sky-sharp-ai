@@ -245,18 +245,49 @@ async function kieEnhance(file: File, scaleFactor: number): Promise<EnhanceRespo
     img.src = dataUrl;
   });
 
-  const { data, error } = await supabase.functions.invoke("kie-enhance", {
+  // Step 1: Start task (upload + create)
+  const { data: startData, error: startError } = await supabase.functions.invoke("kie-enhance", {
     body: { imageBase64: dataUrl, scaleFactor },
   });
 
-  if (error) throw new ApiError(error.message || "Kie AI enhancement failed", 500);
-  if (data?.error) throw new ApiError(data.error, 500);
+  if (startError) throw new ApiError(startError.message || "Kie AI enhancement failed", 500);
+  if (startData?.error) throw new ApiError(startData.error, 500);
 
-  const res = data as EnhanceResponse;
-  if (res.original_dimensions[0] === 0) res.original_dimensions = dims;
-  if (res.enhanced_dimensions[0] === 0) res.enhanced_dimensions = [dims[0] * scaleFactor, dims[1] * scaleFactor];
+  const { taskId, startTime } = startData;
+  if (!taskId) throw new ApiError("No task ID returned from Kie AI", 500);
 
-  return res;
+  // Step 2: Poll from client
+  const POLL_INTERVAL = 3000;
+  const MAX_POLL_TIME = 120_000;
+  const pollStart = Date.now();
+
+  while (Date.now() - pollStart < MAX_POLL_TIME) {
+    await delay(POLL_INTERVAL);
+
+    const { data: pollData, error: pollError } = await supabase.functions.invoke("kie-enhance", {
+      body: { mode: "poll", taskId, startTime },
+    });
+
+    if (pollError) {
+      console.warn("[KIE Poll] Error, retrying...", pollError.message);
+      continue;
+    }
+
+    if (pollData?.status === "complete") {
+      const res = pollData as EnhanceResponse;
+      if (res.original_dimensions[0] === 0) res.original_dimensions = dims;
+      if (res.enhanced_dimensions[0] === 0) res.enhanced_dimensions = [dims[0] * scaleFactor, dims[1] * scaleFactor];
+      return res;
+    }
+
+    if (pollData?.status === "failed") {
+      throw new ApiError(pollData.error || "Kie AI enhancement failed", 500);
+    }
+
+    // status === "polling" → continue
+  }
+
+  throw new ApiError("Enhancement timed out. Please try again with a smaller image.", 408);
 }
 
 export async function healthCheck(): Promise<boolean> {
