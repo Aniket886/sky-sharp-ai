@@ -103,14 +103,18 @@ async function handlePoll(KIE_API_KEY: string, taskId: string, startTime: number
   });
 
   const statusText = await statusRes.text();
+  console.log("[kie-enhance] Poll response:", statusRes.status, statusText);
+
   let statusJson: any = null;
   try { statusJson = JSON.parse(statusText); } catch { /* ignore */ }
 
   if (!statusRes.ok || !statusJson || statusJson.code !== 200) {
+    console.error("[kie-enhance] Poll failed:", statusRes.status, statusText);
     return jsonResponse({ status: "polling", message: "Poll request failed, retry" });
   }
 
   const state = statusJson?.data?.state;
+  console.log("[kie-enhance] Task state:", state);
 
   if (state === "success") {
     const rawResult = statusJson?.data?.resultJson;
