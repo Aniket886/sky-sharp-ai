@@ -257,18 +257,12 @@ async function kieEnhance(file: File, scaleFactor: number, fastMode: boolean): P
   if (!taskId) throw new ApiError("No task ID returned from Kie AI", 500);
 
   const POLL_INTERVAL = 2000;
-  const MAX_POLL_TIME = fastMode ? 60_000 : 90_000; // max 1.5 min even for max quality
-  const FAST_FALLBACK_TIMEOUT_MS = 60_000;
+  const MAX_POLL_TIME = 60_000; // 1 min hard cap for both modes
   const MAX_POLL_ERRORS = 5;
   const pollStart = Date.now();
   let pollErrors = 0;
 
   while (Date.now() - pollStart < MAX_POLL_TIME) {
-    if (fastMode && scaleFactor >= 4 && Date.now() - pollStart >= FAST_FALLBACK_TIMEOUT_MS) {
-      console.warn("[KIE Poll] Fast mode: falling back to Real-ESRGAN");
-      return realEsrganEnhance(file, scaleFactor);
-    }
-
     await delay(POLL_INTERVAL);
 
     const { data: pollData, error: pollError } = await supabase.functions.invoke("kie-enhance", {
@@ -279,7 +273,8 @@ async function kieEnhance(file: File, scaleFactor: number, fastMode: boolean): P
       pollErrors += 1;
       console.warn(`[KIE Poll] Error ${pollErrors}/${MAX_POLL_ERRORS}:`, pollError.message);
       if (pollErrors >= MAX_POLL_ERRORS) {
-        throw new ApiError("Kie polling failed repeatedly. Please try again.", 500);
+        console.warn("[KIE Poll] Too many errors, falling back to Real-ESRGAN");
+        return realEsrganEnhance(file, scaleFactor);
       }
       continue;
     }
@@ -294,20 +289,14 @@ async function kieEnhance(file: File, scaleFactor: number, fastMode: boolean): P
     }
 
     if (pollData?.status === "failed") {
-      const failCode = String(pollData?.failCode ?? "");
-      const failMessage = pollData?.error || "Kie AI enhancement failed";
-
-      // Kie sometimes rejects jobs with provider-side 422; fallback to Real-ESRGAN.
-      if (failCode === "422" || /models task execute failed/i.test(failMessage)) {
-        console.warn("[KIE Poll] Provider task failed, falling back to Real-ESRGAN");
-        return realEsrganEnhance(file, scaleFactor);
-      }
-
-      throw new ApiError(failMessage, 500);
+      console.warn("[KIE Poll] Provider task failed, falling back to Real-ESRGAN");
+      return realEsrganEnhance(file, scaleFactor);
     }
   }
 
-  throw new ApiError("Kie queue is still processing. Please retry in a minute.", 408);
+  // Timeout → always fallback instead of erroring
+  console.warn("[KIE Poll] Timed out after 60s, falling back to Real-ESRGAN");
+  return realEsrganEnhance(file, scaleFactor);
 }
 
 export async function healthCheck(): Promise<boolean> {
