@@ -3,11 +3,14 @@ import type { EnhanceResponse } from "@/services/api";
 
 type ProcessingStatus = "idle" | "uploading" | "processing" | "complete" | "error";
 
+export type QualityMode = "fast" | "max";
+
 interface EnhanceState {
   file: File | null;
   preview: string | null;
   scaleFactor: string;
   model: string;
+  qualityMode: QualityMode;
   status: ProcessingStatus;
   error: string | null;
   result: EnhanceResult | null;
@@ -31,6 +34,7 @@ interface EnhanceContextValue extends EnhanceState {
   setFile: (file: File | null, preview: string | null) => void;
   setScaleFactor: (v: string) => void;
   setModel: (v: string) => void;
+  setQualityMode: (v: QualityMode) => void;
   setStatus: (s: ProcessingStatus) => void;
   setError: (e: string | null) => void;
   setResult: (r: EnhanceResult | null) => void;
@@ -55,6 +59,7 @@ export function EnhanceProvider({ children }: { children: ReactNode }) {
   const [preview, setPreview] = useState<string | null>(null);
   const [scaleFactor, setScaleFactor] = useState("4");
   const [model, setModel] = useState("kie");
+  const [qualityMode, setQualityMode] = useState<QualityMode>("fast");
   const [status, setStatus] = useState<ProcessingStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [result, setResultState] = useState<EnhanceResult | null>(loadPersistedResult);
@@ -83,8 +88,8 @@ export function EnhanceProvider({ children }: { children: ReactNode }) {
   return (
     <EnhanceContext.Provider
       value={{
-        file, preview, scaleFactor, model, status, error, result,
-        setFile, setScaleFactor, setModel, setStatus, setError, setResult, reset,
+        file, preview, scaleFactor, model, qualityMode, status, error, result,
+        setFile, setScaleFactor, setModel, setQualityMode, setStatus, setError, setResult, reset,
       }}
     >
       {children}
