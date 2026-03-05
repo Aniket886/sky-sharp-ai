@@ -123,9 +123,12 @@ const Enhance = () => {
       setStatus("complete");
 
       navigate("/results");
-    } catch (err) {
+    } catch (err: any) {
       setStatus("error");
-      const message = err instanceof ApiError ? err.message : "An unexpected error occurred.";
+      const message = err instanceof ApiError
+        ? err.message
+        : (err?.message || "An unexpected error occurred. Please try again.");
+      console.error("[Enhance] Error:", err);
       setError(message);
       toast({ variant: "destructive", title: "Enhancement Failed", description: message });
     }
