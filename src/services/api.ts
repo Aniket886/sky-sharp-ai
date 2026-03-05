@@ -252,25 +252,16 @@ async function kieEnhance(file: File, scaleFactor: number, fastMode: boolean): P
       body: { imageBase64: dataUrl, scaleFactor, fastMode },
     });
 
-    if (startError) {
-      console.warn("[KIE] Start failed, falling back to Real-ESRGAN:", startError.message);
-      return realEsrganEnhance(file, scaleFactor);
-    }
-    if (data?.error) {
-      console.warn("[KIE] Start error:", data.error, "— falling back to Real-ESRGAN");
-      return realEsrganEnhance(file, scaleFactor);
-    }
+    if (startError) throw new ApiError(startError.message || "Kie AI enhancement failed to start", 500);
+    if (data?.error) throw new ApiError(data.error, 500);
     startData = data;
   } catch (e: any) {
-    console.warn("[KIE] Start exception, falling back to Real-ESRGAN:", e?.message);
-    return realEsrganEnhance(file, scaleFactor);
+    if (e instanceof ApiError) throw e;
+    throw new ApiError(e?.message || "Kie AI enhancement failed to start", 500);
   }
 
   const { taskId, startTime } = startData;
-  if (!taskId) {
-    console.warn("[KIE] No task ID, falling back to Real-ESRGAN");
-    return realEsrganEnhance(file, scaleFactor);
-  }
+  if (!taskId) throw new ApiError("No task ID returned from Kie AI", 500);
 
   const POLL_INTERVAL = 2000;
   const MAX_POLL_TIME = 60_000; // 1 min hard cap for both modes
@@ -290,8 +281,7 @@ async function kieEnhance(file: File, scaleFactor: number, fastMode: boolean): P
         pollErrors += 1;
         console.warn(`[KIE Poll] Error ${pollErrors}/${MAX_POLL_ERRORS}:`, pollError.message);
         if (pollErrors >= MAX_POLL_ERRORS) {
-          console.warn("[KIE Poll] Too many errors, falling back to Real-ESRGAN");
-          return realEsrganEnhance(file, scaleFactor);
+          throw new ApiError("Kie AI polling failed repeatedly. Please try again.", 500);
         }
         continue;
       }
@@ -306,22 +296,20 @@ async function kieEnhance(file: File, scaleFactor: number, fastMode: boolean): P
       }
 
       if (pollData?.status === "failed") {
-        console.warn("[KIE Poll] Provider task failed, falling back to Real-ESRGAN");
-        return realEsrganEnhance(file, scaleFactor);
+        const failMsg = pollData?.error || "Kie AI enhancement failed";
+        throw new ApiError(failMsg, 500);
       }
     } catch (e: any) {
+      if (e instanceof ApiError) throw e;
       pollErrors += 1;
       console.warn(`[KIE Poll] Exception ${pollErrors}/${MAX_POLL_ERRORS}:`, e?.message);
       if (pollErrors >= MAX_POLL_ERRORS) {
-        console.warn("[KIE Poll] Too many exceptions, falling back to Real-ESRGAN");
-        return realEsrganEnhance(file, scaleFactor);
+        throw new ApiError("Kie AI polling failed. Please try again.", 500);
       }
     }
   }
 
-  // Timeout → always fallback instead of erroring
-  console.warn("[KIE Poll] Timed out after 60s, falling back to Real-ESRGAN");
-  return realEsrganEnhance(file, scaleFactor);
+  throw new ApiError("Kie AI is still processing. Please try again in a moment.", 408);
 }
 
 export async function healthCheck(): Promise<boolean> {
