@@ -232,6 +232,18 @@ async function geminiEnhance(file: File, scaleFactor: number): Promise<EnhanceRe
   return res;
 }
 
+type PendingKieTask = {
+  key: string;
+  taskId: string;
+  startTime: number;
+};
+
+let pendingKieTask: PendingKieTask | null = null;
+
+function buildKieTaskKey(file: File, scaleFactor: number, fastMode: boolean) {
+  return `${file.name}:${file.size}:${file.lastModified}:${scaleFactor}:${fastMode ? "fast" : "max"}`;
+}
+
 async function kieEnhance(file: File, scaleFactor: number, fastMode: boolean): Promise<EnhanceResponse> {
   const dataUrl = await new Promise<string>((resolve) => {
     const reader = new FileReader();
@@ -246,25 +258,38 @@ async function kieEnhance(file: File, scaleFactor: number, fastMode: boolean): P
     img.src = dataUrl;
   });
 
-  let startData: any;
-  try {
-    const { data, error: startError } = await supabase.functions.invoke("kie-enhance", {
-      body: { imageBase64: dataUrl, scaleFactor, fastMode },
-    });
+  const taskKey = buildKieTaskKey(file, scaleFactor, fastMode);
+  let taskId = "";
+  let startTime = Date.now();
 
-    if (startError) throw new ApiError(startError.message || "Kie AI enhancement failed to start", 500);
-    if (data?.error) throw new ApiError(data.error, 500);
-    startData = data;
-  } catch (e: any) {
-    if (e instanceof ApiError) throw e;
-    throw new ApiError(e?.message || "Kie AI enhancement failed to start", 500);
+  // Reuse existing in-progress Kie task to avoid creating a new charged job on retry
+  if (pendingKieTask?.key === taskKey) {
+    taskId = pendingKieTask.taskId;
+    startTime = pendingKieTask.startTime;
+    console.log("[KIE] Reusing existing task on retry:", taskId);
+  } else {
+    try {
+      const { data, error: startError } = await supabase.functions.invoke("kie-enhance", {
+        body: { imageBase64: dataUrl, scaleFactor, fastMode },
+      });
+
+      if (startError) throw new ApiError(startError.message || "Kie AI enhancement failed to start", 500);
+      if (data?.error) throw new ApiError(data.error, 500);
+
+      taskId = data?.taskId;
+      startTime = data?.startTime || Date.now();
+
+      if (!taskId) throw new ApiError("No task ID returned from Kie AI", 500);
+
+      pendingKieTask = { key: taskKey, taskId, startTime };
+    } catch (e: any) {
+      if (e instanceof ApiError) throw e;
+      throw new ApiError(e?.message || "Kie AI enhancement failed to start", 500);
+    }
   }
 
-  const { taskId, startTime } = startData;
-  if (!taskId) throw new ApiError("No task ID returned from Kie AI", 500);
-
   const POLL_INTERVAL = 2000;
-  const MAX_POLL_TIME = 60_000; // 1 min hard cap for both modes
+  const MAX_POLL_TIME = 60_000; // 1 min hard cap
   const MAX_POLL_ERRORS = 5;
   const pollStart = Date.now();
   let pollErrors = 0;
@@ -292,10 +317,12 @@ async function kieEnhance(file: File, scaleFactor: number, fastMode: boolean): P
         const res = pollData as EnhanceResponse;
         if (res.original_dimensions[0] === 0) res.original_dimensions = dims;
         if (res.enhanced_dimensions[0] === 0) res.enhanced_dimensions = [dims[0] * scaleFactor, dims[1] * scaleFactor];
+        if (pendingKieTask?.taskId === taskId) pendingKieTask = null;
         return res;
       }
 
       if (pollData?.status === "failed") {
+        if (pendingKieTask?.taskId === taskId) pendingKieTask = null;
         const failMsg = pollData?.error || "Kie AI enhancement failed";
         throw new ApiError(failMsg, 500);
       }
@@ -309,7 +336,8 @@ async function kieEnhance(file: File, scaleFactor: number, fastMode: boolean): P
     }
   }
 
-  throw new ApiError("Kie AI is still processing. Please try again in a moment.", 408);
+  // Keep pending task for retry so we continue polling instead of creating a new charged task
+  throw new ApiError("Kie AI is still processing. Retry will continue the same task.", 408);
 }
 
 export async function healthCheck(): Promise<boolean> {
