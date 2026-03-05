@@ -170,8 +170,17 @@ async function handlePoll(KIE_API_KEY: string, taskId: string, startTime: number
   }
 
   if (isFailureState(state)) {
+    const failCode = statusJson?.data?.failCode;
     const failMsg = statusJson?.data?.failMsg || "Enhancement failed";
-    return jsonResponse({ status: "failed", taskState: state, error: failMsg }, 500);
+
+    // Return HTTP 200 so the client can read structured failure payload
+    // and decide whether to retry, fallback, or show a precise error.
+    return jsonResponse({
+      status: "failed",
+      taskState: state,
+      failCode,
+      error: failMsg,
+    });
   }
 
   return jsonResponse({ status: "polling", taskState: state });
