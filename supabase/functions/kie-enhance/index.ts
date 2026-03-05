@@ -32,12 +32,17 @@ function isFailureState(state: string) {
   return ["fail", "failed", "error", "cancel", "cancelled", "canceled"].includes(state);
 }
 
-async function handleStart(KIE_API_KEY: string, imageBase64: string, scaleFactor: number) {
+async function handleStart(
+  KIE_API_KEY: string,
+  imageBase64: string,
+  scaleFactor: number,
+  fastMode = false,
+) {
   const parsed = parseDataUrl(imageBase64);
   if (!parsed) return jsonResponse({ error: "Invalid image format. Expected base64 data URL." }, 400);
 
   const scale = scaleFactor || 4;
-  const resolution = scale >= 4 ? "4K" : "2K";
+  const resolution = fastMode ? "2K" : scale >= 4 ? "4K" : "2K";
 
   const uploadRes = await fetch(`${KIE_FILE_BASE}/api/file-base64-upload`, {
     method: "POST",
@@ -204,9 +209,9 @@ serve(async (req) => {
       return handlePoll(KIE_API_KEY, taskId, startTime);
     }
 
-    const { imageBase64, scaleFactor } = body;
+    const { imageBase64, scaleFactor, fastMode } = body;
     if (!imageBase64) return jsonResponse({ error: "imageBase64 is required" }, 400);
-    return handleStart(KIE_API_KEY, imageBase64, scaleFactor);
+    return handleStart(KIE_API_KEY, imageBase64, scaleFactor, Boolean(fastMode));
   } catch (error) {
     console.error("[kie-enhance] Error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";

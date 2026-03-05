@@ -246,7 +246,7 @@ async function kieEnhance(file: File, scaleFactor: number): Promise<EnhanceRespo
   });
 
   const { data: startData, error: startError } = await supabase.functions.invoke("kie-enhance", {
-    body: { imageBase64: dataUrl, scaleFactor },
+    body: { imageBase64: dataUrl, scaleFactor, fastMode: scaleFactor >= 4 },
   });
 
   if (startError) throw new ApiError(startError.message || "Kie AI enhancement failed", 500);
@@ -255,13 +255,19 @@ async function kieEnhance(file: File, scaleFactor: number): Promise<EnhanceRespo
   const { taskId, startTime } = startData;
   if (!taskId) throw new ApiError("No task ID returned from Kie AI", 500);
 
-  const POLL_INTERVAL = 3000;
-  const MAX_POLL_TIME = 480_000; // 8 minutes for queued 4K jobs
+  const POLL_INTERVAL = 2000;
+  const MAX_POLL_TIME = 480_000; // hard cap
+  const FAST_FALLBACK_TIMEOUT_MS = 60_000; // prioritize fast UX for heavy 4x jobs
   const MAX_POLL_ERRORS = 5;
   const pollStart = Date.now();
   let pollErrors = 0;
 
   while (Date.now() - pollStart < MAX_POLL_TIME) {
+    if (scaleFactor >= 4 && Date.now() - pollStart >= FAST_FALLBACK_TIMEOUT_MS) {
+      console.warn("[KIE Poll] 4x job is taking too long, falling back to Real-ESRGAN for faster completion");
+      return realEsrganEnhance(file, scaleFactor);
+    }
+
     await delay(POLL_INTERVAL);
 
     const { data: pollData, error: pollError } = await supabase.functions.invoke("kie-enhance", {
