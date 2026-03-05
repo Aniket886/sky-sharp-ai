@@ -24,7 +24,14 @@ function parseDataUrl(dataUrl: string) {
   return { mimeType, ext };
 }
 
-/** Mode 1: Upload image + create KIE task, return taskId */
+function isSuccessState(state: string) {
+  return ["success", "succeeded", "complete", "completed", "done", "finish", "finished"].includes(state);
+}
+
+function isFailureState(state: string) {
+  return ["fail", "failed", "error", "cancel", "cancelled", "canceled"].includes(state);
+}
+
 async function handleStart(KIE_API_KEY: string, imageBase64: string, scaleFactor: number) {
   const parsed = parseDataUrl(imageBase64);
   if (!parsed) return jsonResponse({ error: "Invalid image format. Expected base64 data URL." }, 400);
@@ -32,7 +39,6 @@ async function handleStart(KIE_API_KEY: string, imageBase64: string, scaleFactor
   const scale = scaleFactor || 4;
   const resolution = scale >= 4 ? "4K" : "2K";
 
-  // 1) Upload
   const uploadRes = await fetch(`${KIE_FILE_BASE}/api/file-base64-upload`, {
     method: "POST",
     headers: {
@@ -48,7 +54,11 @@ async function handleStart(KIE_API_KEY: string, imageBase64: string, scaleFactor
 
   const uploadText = await uploadRes.text();
   let uploadJson: any = null;
-  try { uploadJson = JSON.parse(uploadText); } catch { /* ignore */ }
+  try {
+    uploadJson = JSON.parse(uploadText);
+  } catch {
+    /* ignore */
+  }
 
   if (!uploadRes.ok || !uploadJson || uploadJson.code !== 200) {
     console.error("[kie-enhance] Upload failed:", uploadRes.status, uploadText);
@@ -60,7 +70,6 @@ async function handleStart(KIE_API_KEY: string, imageBase64: string, scaleFactor
     return jsonResponse({ error: "Upload succeeded but returned no file URL" }, 500);
   }
 
-  // 2) Create task
   const taskRes = await fetch(`${KIE_API_BASE}/api/v1/jobs/createTask`, {
     method: "POST",
     headers: {
@@ -81,7 +90,11 @@ async function handleStart(KIE_API_KEY: string, imageBase64: string, scaleFactor
 
   const taskText = await taskRes.text();
   let taskJson: any = null;
-  try { taskJson = JSON.parse(taskText); } catch { /* ignore */ }
+  try {
+    taskJson = JSON.parse(taskText);
+  } catch {
+    /* ignore */
+  }
 
   if (!taskRes.ok || !taskJson || taskJson.code !== 200) {
     console.error("[kie-enhance] Task creation failed:", taskText);
@@ -96,7 +109,6 @@ async function handleStart(KIE_API_KEY: string, imageBase64: string, scaleFactor
   return jsonResponse({ taskId, startTime: Date.now() });
 }
 
-/** Mode 2: Poll task status, return result when done */
 async function handlePoll(KIE_API_KEY: string, taskId: string, startTime: number) {
   const statusRes = await fetch(`${KIE_API_BASE}/api/v1/jobs/recordInfo?taskId=${taskId}`, {
     headers: { Authorization: `Bearer ${KIE_API_KEY}` },
@@ -106,21 +118,30 @@ async function handlePoll(KIE_API_KEY: string, taskId: string, startTime: number
   console.log("[kie-enhance] Poll response:", statusRes.status, statusText);
 
   let statusJson: any = null;
-  try { statusJson = JSON.parse(statusText); } catch { /* ignore */ }
+  try {
+    statusJson = JSON.parse(statusText);
+  } catch {
+    /* ignore */
+  }
 
   if (!statusRes.ok || !statusJson || statusJson.code !== 200) {
     console.error("[kie-enhance] Poll failed:", statusRes.status, statusText);
     return jsonResponse({ status: "polling", message: "Poll request failed, retry" });
   }
 
-  const state = statusJson?.data?.state;
+  const state = String(statusJson?.data?.state || "unknown").toLowerCase();
   console.log("[kie-enhance] Task state:", state);
 
-  if (state === "success") {
+  if (isSuccessState(state)) {
     const rawResult = statusJson?.data?.resultJson;
     let parsedResult: any = {};
+
     if (typeof rawResult === "string") {
-      try { parsedResult = JSON.parse(rawResult); } catch { /* ignore */ }
+      try {
+        parsedResult = JSON.parse(rawResult);
+      } catch {
+        /* ignore */
+      }
     } else if (rawResult && typeof rawResult === "object") {
       parsedResult = rawResult;
     }
@@ -136,6 +157,7 @@ async function handlePoll(KIE_API_KEY: string, taskId: string, startTime: number
 
     return jsonResponse({
       status: "complete",
+      taskState: state,
       sr_image_url: resultUrl,
       metrics: {
         psnr: +(28 + Math.random() * 4).toFixed(2),
@@ -147,13 +169,12 @@ async function handlePoll(KIE_API_KEY: string, taskId: string, startTime: number
     });
   }
 
-  if (state === "fail") {
+  if (isFailureState(state)) {
     const failMsg = statusJson?.data?.failMsg || "Enhancement failed";
-    return jsonResponse({ status: "failed", error: failMsg }, 500);
+    return jsonResponse({ status: "failed", taskState: state, error: failMsg }, 500);
   }
 
-  // Still processing
-  return jsonResponse({ status: "polling" });
+  return jsonResponse({ status: "polling", taskState: state });
 }
 
 serve(async (req) => {
@@ -174,7 +195,6 @@ serve(async (req) => {
       return handlePoll(KIE_API_KEY, taskId, startTime);
     }
 
-    // Default: start mode
     const { imageBase64, scaleFactor } = body;
     if (!imageBase64) return jsonResponse({ error: "imageBase64 is required" }, 400);
     return handleStart(KIE_API_KEY, imageBase64, scaleFactor);

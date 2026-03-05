@@ -245,7 +245,6 @@ async function kieEnhance(file: File, scaleFactor: number): Promise<EnhanceRespo
     img.src = dataUrl;
   });
 
-  // Step 1: Start task (upload + create)
   const { data: startData, error: startError } = await supabase.functions.invoke("kie-enhance", {
     body: { imageBase64: dataUrl, scaleFactor },
   });
@@ -256,9 +255,8 @@ async function kieEnhance(file: File, scaleFactor: number): Promise<EnhanceRespo
   const { taskId, startTime } = startData;
   if (!taskId) throw new ApiError("No task ID returned from Kie AI", 500);
 
-  // Step 2: Poll from client
   const POLL_INTERVAL = 3000;
-  const MAX_POLL_TIME = 120_000;
+  const MAX_POLL_TIME = 480_000; // 8 minutes for queued 4K jobs
   const pollStart = Date.now();
 
   while (Date.now() - pollStart < MAX_POLL_TIME) {
@@ -283,11 +281,9 @@ async function kieEnhance(file: File, scaleFactor: number): Promise<EnhanceRespo
     if (pollData?.status === "failed") {
       throw new ApiError(pollData.error || "Kie AI enhancement failed", 500);
     }
-
-    // status === "polling" → continue
   }
 
-  throw new ApiError("Enhancement timed out. Please try again with a smaller image.", 408);
+  throw new ApiError("Kie queue is still processing. Please retry in a minute.", 408);
 }
 
 export async function healthCheck(): Promise<boolean> {
