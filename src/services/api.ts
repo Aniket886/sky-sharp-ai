@@ -257,7 +257,7 @@ async function kieEnhance(file: File, scaleFactor: number, fastMode: boolean): P
   if (!taskId) throw new ApiError("No task ID returned from Kie AI", 500);
 
   const POLL_INTERVAL = 2000;
-  const MAX_POLL_TIME = fastMode ? 120_000 : 480_000;
+  const MAX_POLL_TIME = fastMode ? 60_000 : 90_000; // max 1.5 min even for max quality
   const FAST_FALLBACK_TIMEOUT_MS = 60_000;
   const MAX_POLL_ERRORS = 5;
   const pollStart = Date.now();
