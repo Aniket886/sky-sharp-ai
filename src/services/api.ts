@@ -141,7 +141,8 @@ function friendlyError(status: number): string {
 export async function enhanceImage(
   file: File,
   scaleFactor: number,
-  model: string
+  model: string,
+  fastMode = true,
 ): Promise<EnhanceResponse> {
   if (model === "gemini") {
     console.log("[API] Using Gemini AI for enhancement");
@@ -149,8 +150,8 @@ export async function enhanceImage(
   }
 
   if (model === "kie") {
-    console.log("[API] Using Kie AI (Nano Banana 2) for enhancement");
-    return kieEnhance(file, scaleFactor);
+    console.log(`[API] Using Kie AI (Nano Banana 2), fastMode=${fastMode}`);
+    return kieEnhance(file, scaleFactor, fastMode);
   }
 
   if (model === "real-esrgan") {
@@ -231,7 +232,7 @@ async function geminiEnhance(file: File, scaleFactor: number): Promise<EnhanceRe
   return res;
 }
 
-async function kieEnhance(file: File, scaleFactor: number): Promise<EnhanceResponse> {
+async function kieEnhance(file: File, scaleFactor: number, fastMode: boolean): Promise<EnhanceResponse> {
   const dataUrl = await new Promise<string>((resolve) => {
     const reader = new FileReader();
     reader.onload = (e) => resolve(e.target?.result as string);
@@ -246,7 +247,7 @@ async function kieEnhance(file: File, scaleFactor: number): Promise<EnhanceRespo
   });
 
   const { data: startData, error: startError } = await supabase.functions.invoke("kie-enhance", {
-    body: { imageBase64: dataUrl, scaleFactor, fastMode: scaleFactor >= 4 },
+    body: { imageBase64: dataUrl, scaleFactor, fastMode },
   });
 
   if (startError) throw new ApiError(startError.message || "Kie AI enhancement failed", 500);
@@ -256,15 +257,15 @@ async function kieEnhance(file: File, scaleFactor: number): Promise<EnhanceRespo
   if (!taskId) throw new ApiError("No task ID returned from Kie AI", 500);
 
   const POLL_INTERVAL = 2000;
-  const MAX_POLL_TIME = 480_000; // hard cap
-  const FAST_FALLBACK_TIMEOUT_MS = 60_000; // prioritize fast UX for heavy 4x jobs
+  const MAX_POLL_TIME = fastMode ? 120_000 : 480_000;
+  const FAST_FALLBACK_TIMEOUT_MS = 60_000;
   const MAX_POLL_ERRORS = 5;
   const pollStart = Date.now();
   let pollErrors = 0;
 
   while (Date.now() - pollStart < MAX_POLL_TIME) {
-    if (scaleFactor >= 4 && Date.now() - pollStart >= FAST_FALLBACK_TIMEOUT_MS) {
-      console.warn("[KIE Poll] 4x job is taking too long, falling back to Real-ESRGAN for faster completion");
+    if (fastMode && scaleFactor >= 4 && Date.now() - pollStart >= FAST_FALLBACK_TIMEOUT_MS) {
+      console.warn("[KIE Poll] Fast mode: falling back to Real-ESRGAN");
       return realEsrganEnhance(file, scaleFactor);
     }
 

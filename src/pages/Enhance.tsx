@@ -25,15 +25,20 @@ import { Label } from "@/components/ui/label";
 import { enhanceImage, ApiError } from "@/services/api";
 import { useEnhance, type EnhanceResult } from "@/context/EnhanceContext";
 import SampleImages from "@/components/SampleImages";
+import { Switch } from "@/components/ui/switch";
+import { Zap, Sparkles } from "lucide-react";
 
 const MAX_SIZE_MB = 10;
 const ACCEPTED_TYPES = ["image/png", "image/jpeg", "image/jpg"];
 
 const Enhance = () => {
   const {
-    file, preview, scaleFactor, model, status, error: apiError,
-    setFile, setScaleFactor, setModel, setStatus, setError, setResult,
+    file, preview, scaleFactor, model, qualityMode, status, error: apiError,
+    setFile, setScaleFactor, setModel, setQualityMode, setStatus, setError, setResult,
   } = useEnhance();
+
+  const isFastMode = qualityMode === "fast";
+  const show4xToggle = scaleFactor === "4" && model === "kie";
 
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -98,7 +103,7 @@ const Enhance = () => {
 
     try {
       setStatus("processing");
-      const res = await enhanceImage(file, parseInt(scaleFactor), model);
+      const res = await enhanceImage(file, parseInt(scaleFactor), model, isFastMode);
 
       const result: EnhanceResult = {
         srImageUrl: res.sr_image_url,
@@ -260,7 +265,44 @@ const Enhance = () => {
                   </div>
                 </div>
 
-                {/* Error state with retry */}
+                {/* Fast / Max Quality toggle for 4x Kie */}
+                <AnimatePresence>
+                  {show4xToggle && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="mb-6 md:mb-8"
+                    >
+                      <div className="flex items-center justify-between p-4 rounded-xl border border-border bg-muted/30">
+                        <div className="flex items-center gap-3">
+                          {isFastMode ? (
+                            <Zap className="w-5 h-5 text-amber-400" />
+                          ) : (
+                            <Sparkles className="w-5 h-5 text-primary" />
+                          )}
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">
+                              {isFastMode ? "Fast Mode" : "Max Quality"}
+                            </p>
+                            <p className="text-[11px] text-muted-foreground">
+                              {isFastMode
+                                ? "2K output · ~30s · auto-fallback if slow"
+                                : "4K output · up to 8 min · highest detail"}
+                            </p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={!isFastMode}
+                          onCheckedChange={(checked) => setQualityMode(checked ? "max" : "fast")}
+                          disabled={processing}
+                          aria-label="Toggle quality mode"
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+
                 <AnimatePresence>
                   {status === "error" && apiError && (
                     <motion.div
