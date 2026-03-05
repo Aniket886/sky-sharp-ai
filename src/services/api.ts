@@ -257,7 +257,9 @@ async function kieEnhance(file: File, scaleFactor: number): Promise<EnhanceRespo
 
   const POLL_INTERVAL = 3000;
   const MAX_POLL_TIME = 480_000; // 8 minutes for queued 4K jobs
+  const MAX_POLL_ERRORS = 5;
   const pollStart = Date.now();
+  let pollErrors = 0;
 
   while (Date.now() - pollStart < MAX_POLL_TIME) {
     await delay(POLL_INTERVAL);
@@ -267,9 +269,15 @@ async function kieEnhance(file: File, scaleFactor: number): Promise<EnhanceRespo
     });
 
     if (pollError) {
-      console.warn("[KIE Poll] Error, retrying...", pollError.message);
+      pollErrors += 1;
+      console.warn(`[KIE Poll] Error ${pollErrors}/${MAX_POLL_ERRORS}:`, pollError.message);
+      if (pollErrors >= MAX_POLL_ERRORS) {
+        throw new ApiError("Kie polling failed repeatedly. Please try again.", 500);
+      }
       continue;
     }
+
+    pollErrors = 0;
 
     if (pollData?.status === "complete") {
       const res = pollData as EnhanceResponse;
@@ -279,7 +287,16 @@ async function kieEnhance(file: File, scaleFactor: number): Promise<EnhanceRespo
     }
 
     if (pollData?.status === "failed") {
-      throw new ApiError(pollData.error || "Kie AI enhancement failed", 500);
+      const failCode = String(pollData?.failCode ?? "");
+      const failMessage = pollData?.error || "Kie AI enhancement failed";
+
+      // Kie sometimes rejects jobs with provider-side 422; fallback to Real-ESRGAN.
+      if (failCode === "422" || /models task execute failed/i.test(failMessage)) {
+        console.warn("[KIE Poll] Provider task failed, falling back to Real-ESRGAN");
+        return realEsrganEnhance(file, scaleFactor);
+      }
+
+      throw new ApiError(failMessage, 500);
     }
   }
 
